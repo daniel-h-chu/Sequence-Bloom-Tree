@@ -1,5 +1,4 @@
 from SBT import SBT
-from BloomFilter import BloomFilter
 import math
 
 
@@ -17,22 +16,15 @@ num_files = 100
 str_length = 1000
 
 k = 25
-
 bloom_filter_length = 10
 hash_functions = [hash]
 threshold = 0.5
 similarity_function = hamming
 
-sbt = SBT(bloom_filter_length, hash_functions, threshold, similarity_function)
+sbt = SBT(k, bloom_filter_length, hash_functions, threshold, similarity_function)
 
 for file_num in range(num_files):
-    # Read test text and create bloom filter
-    f = open('testData/string' + str(file_num), 'r')
-    string = f.readline()
-    bloom_filter = BloomFilter(bloom_filter_length, hash_functions, similarity_function)
+    # Read test text and insert
+    f = open('testData/sequence' + str(file_num), 'r')
+    sbt.insert_sequence(f.readline())
 
-    for kmer_index in range(0, len(string) - k + 1):
-        kmer = string[kmer_index:kmer_index + k]
-        bloom_filter.insert(kmer)
-
-    sbt.insert(bloom_filter)
