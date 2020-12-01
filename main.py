@@ -29,7 +29,7 @@ for file_num in range(num_files):
     # Read test text and create bloom filter
     f = open('testData/string' + str(file_num), 'r')
     string = f.readline()
-    bloom_filter = BloomFilter(bloom_filter_length, hash_functions)
+    bloom_filter = BloomFilter(bloom_filter_length, hash_functions, similarity_function)
 
     for kmer_index in range(0, len(string) - k + 1):
         kmer = string[kmer_index:kmer_index + k]

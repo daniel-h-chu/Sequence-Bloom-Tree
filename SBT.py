@@ -26,7 +26,7 @@ class SBT(object):
         self.hash_functions = hash_functions
         self.threshold = threshold
         self.similarity_function = similarity_function
-        self.root = Node(BloomFilter(self.bloom_filter_length, self.hash_functions))
+        self.root = Node(BloomFilter(self.bloom_filter_length, self.hash_functions, similarity_function))
 
     def insert(self, bloom_filter):
 
