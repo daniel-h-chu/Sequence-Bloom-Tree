@@ -1,8 +1,11 @@
 import random
 
 
+# Node
+# Holds Bloom Filter parameters
+# Each Node holds a single Bloom Filter (boolean array)
 class Node(object):
-    count = 0
+    count = 0  # How many Nodes have been created
 
     def __init__(self, bloom_filter_length, hash_functions, similarity_function, experiment_name,
                  bloom_filter=None):
@@ -10,22 +13,23 @@ class Node(object):
         self.hash_functions = hash_functions
         self.similarity_function = similarity_function
         self.experiment_name = experiment_name
-        self.id = str(Node.count)
-        self.bloom_filter = [0] * bloom_filter_length if bloom_filter is None else bloom_filter
+        # Initialize Bloom Filters to all 0s
+        self.bloom_filter = [False] * bloom_filter_length if bloom_filter is None else bloom_filter
         self.left_child = None
         self.right_child = None
-
+        # Give node an id
+        self.id = str(Node.count)
         Node.count += 1
 
     # Bloom filter function: insert kmer
     def insert_kmer(self, kmer):
         for hash_function in self.hash_functions:
-            self.bloom_filter[hash_function(kmer) % self.bloom_filter_length] = 1
+            self.bloom_filter[hash_function(kmer) % self.bloom_filter_length] = True
 
     # Bloom filter function: query kmer
     def query_kmer(self, kmer):
-        for hash_function in self.hash_functions:
-            if self.bloom_filter[hash_function(kmer) % self.bloom_filter_length] == 0:
+        for hash_function in self.hash_functions:  # Check if any bits are 0, if so return false
+            if not self.bloom_filter[hash_function(kmer) % self.bloom_filter_length]:
                 return False
         return True
 
@@ -48,7 +52,7 @@ class Node(object):
         # 0 children - copy current node into left child and insert into right child
         if self.left_child is None and self.right_child is None:
             self.left_child = self.copy()
-            self.experiment_name = "inner" + str(self.id)  # Label inner nodes
+            self.experiment_name = "I" + str(self.id)  # Label inner nodes
             self.right_child = node
         # 1 child - insert into other child
         elif self.left_child is None:
@@ -70,41 +74,43 @@ class Node(object):
         # Union bloom filter
         self.union_bloom_filter(node)
 
-    def query_experiment(self, kmers: list, threshold):
-        absolute_threshold = len(kmers) * threshold
-        hits = 0
-        misses = 0
-        for kmer in kmers:
+    # Insert node based on presence of kmers and an absolute threshold
+    def query_experiment(self, kmers: list, absolute_threshold):
+        hits = []
+        num_misses = 0
+        for kmer in kmers:  # Check if kmer is present
             if self.query_kmer(kmer):
-                hits += 1
+                hits += [kmer]
             else:
-                misses += 1
-            if hits >= absolute_threshold:  # Search children since enough hits
+                num_misses += 1
+            if len(hits) >= absolute_threshold:  # Search children since enough hits
                 if self.left_child is None and self.right_child is None:  # Return since this node is a leaf/exp
                     return [self.experiment_name]
                 experiment_hits = []
-                if self.left_child is not None:  # Iterate search in children
-                    experiment_hits += self.left_child.query_experiment(kmers, threshold)
-                if self.right_child is not None:  # Iterate search in children
-                    experiment_hits += self.right_child.query_experiment(kmers, threshold)
+                if self.left_child is not None:  # Iterate search in children only on kmer hits
+                    experiment_hits += self.left_child.query_experiment(hits, absolute_threshold)
+                if self.right_child is not None:  # Iterate search in children only on kmer hits
+                    experiment_hits += self.right_child.query_experiment(hits, absolute_threshold)
                 return experiment_hits
-            if misses > len(kmers) - absolute_threshold:  # Stop since too many misses
+            if num_misses > len(kmers) - absolute_threshold:  # Stop since too many misses
                 return []
+        print('oops')
         return []  # Should not reach here
 
+    # Print experiment name and the bits of the bloom filter, then iterate on children
     def print(self):
-        print(self.experiment_name, self.bloom_filter)
+        print(self.experiment_name, '\t', ''.join(map(str,map(int, self.bloom_filter))))
         if self.left_child is not None:
             self.left_child.print()
         if self.right_child is not None:
             self.right_child.print()
 
+    # Obtain experiment name or bits of the bloom filter, then add to a graphviz Graph, then iterate on children
     def graphviz(self, graph, bits):
-        graph.node(self.id, ''.join(map(str, self.bloom_filter)) if bits else self.experiment_name)
+        graph.node(self.id, ''.join(map(str, map(int, self.bloom_filter))) if bits else self.experiment_name)
         if self.left_child is not None:
-            graph.edge(self.id, self.left_child.id)
+            graph.edge(tail_name=self.id, head_name=self.left_child.id)
             self.left_child.graphviz(graph, bits)
         if self.right_child is not None:
-            graph.edge(self.id, self.right_child.id)
+            graph.edge(tail_name=self.id, head_name=self.right_child.id)
             self.right_child.graphviz(graph, bits)
-        return graph

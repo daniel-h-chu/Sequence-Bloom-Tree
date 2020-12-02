@@ -1,7 +1,7 @@
 import random
 
 num_files = 100
-str_length = 1000
+str_length = 10000
 
 for i in range(num_files):
     f = open('testData/sequence' + str(i), 'w')
