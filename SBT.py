@@ -1,4 +1,5 @@
 from Node import Node
+from graphviz import Digraph
 
 
 class SBT(object):
@@ -8,7 +9,7 @@ class SBT(object):
         self.hash_functions = hash_functions
         self.threshold = threshold
         self.similarity_function = similarity_function
-        self.root = Node(self.bloom_filter_length, self.hash_functions, similarity_function)
+        self.root = None
 
     def insert_experiment(self, sequences: list, experiment_name=None):
         node = Node(self.bloom_filter_length, self.hash_functions, self.similarity_function, experiment_name)
@@ -30,10 +31,22 @@ class SBT(object):
         self.insert_node(node)
 
     def insert_node(self, node):
-        self.root.insert_child_node(node)
+        if self.root is None:
+            self.root = node
+        else:
+            self.root.insert_experiment(node)
 
-    def query_sequence(self, node):
+    def query_sequence(self, sequence: str):
+        kmers = [sequence[kmer_index:kmer_index + self.k] for kmer_index in range(0, len(sequence) - self.k + 1)]
+        return self.root.query_experiment(kmers, self.threshold)
 
-        pass
+    def print(self):
+        self.root.print()
 
+    def graphviz_names(self):
+        graph = Digraph()
+        return self.root.graphviz(graph, False)
 
+    def graphviz_bits(self):
+        graph = Digraph()
+        return self.root.graphviz(graph, True)
