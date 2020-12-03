@@ -1,4 +1,5 @@
 import random
+from bitarray import bitarray
 
 
 # Node
@@ -14,7 +15,7 @@ class Node(object):
         self.similarity_function = similarity_function
         self.experiment_name = experiment_name
         # Initialize Bloom Filters to all 0s
-        self.bloom_filter = [False] * bloom_filter_length if bloom_filter is None else bloom_filter
+        self.bloom_filter = bitarray(bloom_filter_length) if bloom_filter is None else bloom_filter
         self.left_child = None
         self.right_child = None
         # Give node an id
@@ -35,8 +36,7 @@ class Node(object):
 
     # Bloom filter function: union this node's bloom filter with other node bloom filter and store in this bloom filter
     def union_bloom_filter(self, node):
-        for i in range(self.bloom_filter_length):
-            self.bloom_filter[i] = self.bloom_filter[i] | node.bloom_filter[i]
+        self.bloom_filter |= node.bloom_filter
 
     # Bloom filter function: return similarity between this node's bloom filter and another node's
     def bloom_filter_similarity(self, node):
@@ -45,7 +45,7 @@ class Node(object):
     # Deep copy node (except for left and right children)
     def copy(self):
         return Node(self.bloom_filter_length, self.hash_functions, self.similarity_function, self.experiment_name,
-                    [bit for bit in self.bloom_filter])
+                    self.bloom_filter.copy())
 
     # Insert node based on bloom filter similarity and child presence
     def insert_experiment(self, node):

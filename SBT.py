@@ -1,5 +1,6 @@
 from Node import Node
 from graphviz import Digraph
+import pickle
 
 
 # Sequence Bloom Tree
@@ -63,3 +64,10 @@ class SBT(object):
         graph = Digraph()
         self.root.graphviz(graph=graph, bits=True)
         return graph
+
+    def save(self, file_name):
+        pickle.dump(self, open(file_name, "wb"))
+
+    @staticmethod
+    def load(file_name):
+        return pickle.load(open(file_name, "rb"))
