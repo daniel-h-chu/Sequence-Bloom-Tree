@@ -7,7 +7,7 @@ from utils import *
 sequence_len = 100000
 num_sequences = 100                     # n
 k = 300                                 # k
-bloom_filter_length = 50000             # m
+bloom_filter_length = 40000             # m
 hash_functions = [hash]                 # h
 threshold = 0.99                        # theta
 similarity_function = hamming           # similarity()
@@ -24,4 +24,4 @@ query_sequences(sbt, {name: sequence[:query_size] for name, sequence in sequence
 # Save SBT
 save_sbt(sbt, "savedSBT/sbt")
 # Print Expected Bytes
-print("Reads Size (Bytes)\t", sequence_len * num_sequences / 4)
+print("Reads Size (Bytes)  ", int(sequence_len * num_sequences / 4))
