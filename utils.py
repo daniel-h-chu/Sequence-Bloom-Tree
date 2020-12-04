@@ -5,7 +5,8 @@ import os
 
 # Similarity Function
 def hamming(a, b):
-    return sum(a ^ b)
+    # return -(a ^ b).sum()
+    return -sum(a ^ b)
 
 
 # Similarity Function
@@ -15,13 +16,13 @@ def cosine(a, b):
 
 
 # Read sequences
-def read_sequences(file_names):
+def read_sequences(file_names, sequence_len):
     sequences = {}
     start = time.time()
     for file_name in file_names:
         # Read test sequences and insert
         f = open(file_name, 'r')
-        sequences[file_name] = f.readline()
+        sequences[file_name] = f.readline()[:sequence_len]
         f.close()
     end = time.time()
     print("Read Time           ", end - start)

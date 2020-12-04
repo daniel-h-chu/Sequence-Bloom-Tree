@@ -1,5 +1,6 @@
 import random
 from bitarray import bitarray
+import numpy as np
 
 
 # Node
@@ -15,7 +16,8 @@ class Node(object):
         self.similarity_function = similarity_function
         self.experiment_name = experiment_name
         # Initialize Bloom Filters to all 0s
-        self.bloom_filter = bitarray(bloom_filter_length) if bloom_filter is None else bloom_filter
+        # self.bloom_filter = np.zeros(bloom_filter_length, bool) if bloom_filter is None else bloom_filter
+        self.bloom_filter = bitarray('0') * bloom_filter_length if bloom_filter is None else bloom_filter
         self.left_child = None
         self.right_child = None
         # Give node an id
@@ -99,7 +101,7 @@ class Node(object):
 
     # Print experiment name and the bits of the bloom filter, then iterate on children
     def print(self):
-        print(self.experiment_name, '\t', ''.join(map(str,map(int, self.bloom_filter))))
+        print(self.experiment_name, '\t', ''.join(map(str, map(int, self.bloom_filter))))
         if self.left_child is not None:
             self.left_child.print()
         if self.right_child is not None:
