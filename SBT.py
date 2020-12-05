@@ -1,6 +1,7 @@
 from Node import Node
 from graphviz import Digraph
 import pickle
+import numpy as np
 
 
 # Sequence Bloom Tree
@@ -15,7 +16,7 @@ class SBT(object):
         self.root = None
 
     # Creates a node for an experiment (list of sequences) and inserts it into the SBT
-    def insert_experiment(self, sequences: list, experiment_name=None):
+    def insert_experiment(self, sequences: list, experiment_name: str):
         node = Node(self.bloom_filter_length, self.hash_functions, self.similarity_function, experiment_name)
 
         for sequence in sequences:  # Iterate through sequences
@@ -26,7 +27,7 @@ class SBT(object):
         self.insert_node(node)
 
     # Creates a node for a single sequence and inserts it into the SBT
-    def insert_sequence(self, sequence: str, experiment_name=None):
+    def insert_sequence(self, sequence: str, experiment_name: str):
         node = Node(self.bloom_filter_length, self.hash_functions, self.similarity_function, experiment_name)
 
         for kmer_index in range(0, len(sequence) - self.k + 1):  # Iterate through k-mers
@@ -41,6 +42,73 @@ class SBT(object):
             self.root = node
         else:
             self.root.insert_experiment(node)
+
+    # Insert multiple sequences using clustering (AllSome Paper)
+    def insert_cluster_sequences1(self, sequences: list, experiment_names: list, bits_to_check):
+        nodes = []
+        if self.root is not None:
+            nodes.append(self.root)
+        for sequence, name in zip(sequences, experiment_names):
+            node = Node(self.bloom_filter_length, self.hash_functions, self.similarity_function, name)
+            for kmer_index in range(0, len(sequence) - self.k + 1):  # Iterate through k-mers
+                kmer = sequence[kmer_index:kmer_index + self.k]
+                node.insert_kmer(kmer)
+            nodes.append(node)
+        # Iterate through all nodes, select the two that are the most similar and then create a parent node from them
+        while len(nodes) > 1:
+            max_similarity = -np.inf
+            max_pair = ()
+            for idx1 in range(len(nodes)):
+                for idx2 in range(idx1 + 1, len(nodes)):
+                    similarity = self.similarity_function(nodes[idx1].bloom_filter[:bits_to_check],
+                                                          nodes[idx2].bloom_filter[:bits_to_check])
+                    # print(similarity)
+                    if similarity > max_similarity:
+                        max_similarity = similarity
+                        max_pair = (idx1, idx2)
+            node = nodes[max_pair[0]].copy()
+            node.left_child = nodes[max_pair[0]]
+            node.right_child = nodes[max_pair[1]]
+            node.union_bloom_filter(node.right_child)
+            nodes.remove(node.left_child)
+            nodes.remove(node.right_child)
+            nodes.append(node)
+        self.root = nodes[0]
+
+    # Insert multiple sequences using clustering (AllSome Paper)
+    def insert_cluster_sequences2(self, sequences: list, experiment_names: list, bits_to_check):
+        nodes = []
+        if self.root is not None:
+            nodes.append(self.root)
+        for sequence, name in zip(sequences, experiment_names):
+            node = Node(self.bloom_filter_length, self.hash_functions, self.similarity_function, name)
+            for kmer_index in range(0, len(sequence) - self.k + 1):  # Iterate through k-mers
+                kmer = sequence[kmer_index:kmer_index + self.k]
+                node.insert_kmer(kmer)
+            nodes.append(node)
+        # Iterate through all nodes, select the two that are the most similar and then create a parent node from them
+        while len(nodes) > 1:
+            parent_nodes = []
+            while len(nodes) > 1:
+                max_similarity = -np.inf
+                max_pair = ()
+                for idx1 in range(len(nodes)):
+                    for idx2 in range(idx1 + 1, len(nodes)):
+                        similarity = self.similarity_function(nodes[idx1].bloom_filter[:bits_to_check],
+                                                              nodes[idx2].bloom_filter[:bits_to_check])
+                        # print(similarity)
+                        if similarity > max_similarity:
+                            max_similarity = similarity
+                            max_pair = (idx1, idx2)
+                node = nodes[max_pair[0]].copy()
+                node.left_child = nodes[max_pair[0]]
+                node.right_child = nodes[max_pair[1]]
+                node.union_bloom_filter(node.right_child)
+                nodes.remove(node.left_child)
+                nodes.remove(node.right_child)
+                parent_nodes.append(node)
+            nodes = parent_nodes
+        self.root = nodes[0]
 
     # Search the SBT for a single sequence/read
     def query_sequence(self, sequence: str):
