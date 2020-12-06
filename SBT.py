@@ -1,5 +1,6 @@
-from Node import Node
 from graphviz import Digraph
+from SSBTNode import SSBTNode
+from BaseNode import BaseNode
 import pickle
 import numpy as np
 
@@ -7,17 +8,20 @@ import numpy as np
 # Sequence Bloom Tree
 # Holds parameters for Bloom Filters and querying, also holds the root Node/Bloom Filter
 class SBT(object):
-    def __init__(self, k, bloom_filter_length, hash_functions, threshold, similarity_function):
+    def __init__(self, k, bloom_filter_length, hash_functions, threshold, similarity_function, node_class):
         self.k = k
         self.bloom_filter_length = bloom_filter_length
         self.hash_functions = hash_functions
         self.threshold = threshold
         self.similarity_function = similarity_function
+        if node_class is not "BaseNode" and node_class is not "SSBTNode":
+            raise KeyError("Node class should be BaseNode or SSBTNode")
+        self.NodeClass = BaseNode if node_class is "BaseNode" else SSBTNode
         self.root = None
 
     # Creates a node for an experiment (list of sequences) and inserts it into the SBT
     def insert_experiment(self, sequences: list, experiment_name: str):
-        node = Node(self.bloom_filter_length, self.hash_functions, self.similarity_function, experiment_name)
+        node = self.NodeClass(self.bloom_filter_length, self.hash_functions, self.similarity_function, experiment_name)
 
         for sequence in sequences:  # Iterate through sequences
             for kmer_index in range(0, len(sequence) - self.k + 1):  # Iterate through k-mers
@@ -28,7 +32,7 @@ class SBT(object):
 
     # Creates a node for a single sequence and inserts it into the SBT
     def insert_sequence(self, sequence: str, experiment_name: str):
-        node = Node(self.bloom_filter_length, self.hash_functions, self.similarity_function, experiment_name)
+        node = self.NodeClass(self.bloom_filter_length, self.hash_functions, self.similarity_function, experiment_name)
 
         for kmer_index in range(0, len(sequence) - self.k + 1):  # Iterate through k-mers
             kmer = sequence[kmer_index:kmer_index + self.k]
@@ -49,7 +53,7 @@ class SBT(object):
         if self.root is not None:
             nodes.append(self.root)
         for sequence, name in zip(sequences, experiment_names):
-            node = Node(self.bloom_filter_length, self.hash_functions, self.similarity_function, name)
+            node = self.NodeClass(self.bloom_filter_length, self.hash_functions, self.similarity_function, name)
             for kmer_index in range(0, len(sequence) - self.k + 1):  # Iterate through k-mers
                 kmer = sequence[kmer_index:kmer_index + self.k]
                 node.insert_kmer(kmer)
@@ -60,16 +64,11 @@ class SBT(object):
             max_pair = ()
             for idx1 in range(len(nodes)):
                 for idx2 in range(idx1 + 1, len(nodes)):
-                    similarity = self.similarity_function(nodes[idx1].bloom_filter[:bits_to_check],
-                                                          nodes[idx2].bloom_filter[:bits_to_check])
-                    # print(similarity)
+                    similarity = nodes[idx1].similarity(nodes[idx2], bits_to_check)
                     if similarity > max_similarity:
                         max_similarity = similarity
                         max_pair = (idx1, idx2)
-            node = nodes[max_pair[0]].copy()
-            node.left_child = nodes[max_pair[0]]
-            node.right_child = nodes[max_pair[1]]
-            node.union_bloom_filter(node.right_child)
+            node = self.NodeClass.from_children(nodes[max_pair[0]], nodes[max_pair[1]])
             nodes.remove(node.left_child)
             nodes.remove(node.right_child)
             nodes.append(node)
@@ -81,7 +80,7 @@ class SBT(object):
         if self.root is not None:
             nodes.append(self.root)
         for sequence, name in zip(sequences, experiment_names):
-            node = Node(self.bloom_filter_length, self.hash_functions, self.similarity_function, name)
+            node = self.NodeClass(self.bloom_filter_length, self.hash_functions, self.similarity_function, name)
             for kmer_index in range(0, len(sequence) - self.k + 1):  # Iterate through k-mers
                 kmer = sequence[kmer_index:kmer_index + self.k]
                 node.insert_kmer(kmer)
@@ -94,20 +93,15 @@ class SBT(object):
                 max_pair = ()
                 for idx1 in range(len(nodes)):
                     for idx2 in range(idx1 + 1, len(nodes)):
-                        similarity = self.similarity_function(nodes[idx1].bloom_filter[:bits_to_check],
-                                                              nodes[idx2].bloom_filter[:bits_to_check])
-                        # print(similarity)
+                        similarity = nodes[idx1].similarity(nodes[idx2], bits_to_check)
                         if similarity > max_similarity:
                             max_similarity = similarity
                             max_pair = (idx1, idx2)
-                node = nodes[max_pair[0]].copy()
-                node.left_child = nodes[max_pair[0]]
-                node.right_child = nodes[max_pair[1]]
-                node.union_bloom_filter(node.right_child)
+                node = self.NodeClass.from_children(nodes[max_pair[0]], nodes[max_pair[1]])
                 nodes.remove(node.left_child)
                 nodes.remove(node.right_child)
                 parent_nodes.append(node)
-            nodes = parent_nodes
+            nodes.extend(parent_nodes)
         self.root = nodes[0]
 
     # Search the SBT for a single sequence/read

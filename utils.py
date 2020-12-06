@@ -6,7 +6,6 @@ from memory_profiler import profile
 
 # Similarity Function
 def hamming(a, b):
-    # return -(a ^ b).sum()
     return -sum(a ^ b)
 
 
@@ -75,13 +74,16 @@ def query_sequences(sbt, q_sequences, all_sequences):
     start = time.time()
     total_positives = 0
     true_positives = 0
+    false_negatives = 0
     for name, q_sequence in q_sequences.items():
         results = sbt.query_sequence(sequence=q_sequence)
         total_positives += len(results)
         true_positives += name in results
+        false_negatives += name not in results
     end = time.time()
     print("Query Time          ", end - start)
     print("Precision           ", true_positives / total_positives)
+    print("False Negatives Oops", false_negatives)
 
 
 # Save SBT and report size
