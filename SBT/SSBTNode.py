@@ -5,13 +5,10 @@ def hamming(a, b):
     return -sum(a ^ b)
 
 
-def ssbt_similarity_function(a, b):
+def ssbt_similarity_function(a, b):  # SSBT cannot customize similarity function?
     return sum(a & b) + hamming(a, b) * 1e-9
 
 
-# Node
-# Holds Bloom Filter parameters
-# Each Node holds a single Bloom Filter (boolean array)
 class SSBTNode(object):
     count = 0  # How many Nodes have been created
 
@@ -121,32 +118,9 @@ class SSBTNode(object):
         # Search children since not enough hits but not enough misses only on kmer partial hits
         return self.left_child.query_experiment(partial_hits, absolute_threshold - complete_hits) + \
             self.right_child.query_experiment(partial_hits, absolute_threshold - complete_hits)
-    
-    # Faster query (consider a dict of indices and counts to check in each filter)
-    def fast_query_experiment(self, filter_index_dict, filter_indices, absolute_threshold, total_kmers):
-        partial_hits = []
-        complete_hits = 0
-        complete_misses = 0
-        for index in filter_indices:  # Check if kmer is present
-            if self.sim_filter[index]:  # Complete hit - all children have
-                complete_hits += filter_index_dict[index]
-                if complete_hits >= absolute_threshold:  # Enough hits to return all children
-                    return self.iter_children()
-            elif self.rem_filter is not None and self.rem_filter[index]:  # Partial hit - some children have, some don't
-                partial_hits.append(index)
-            else:  # Complete miss - no children have
-                complete_misses += filter_index_dict[index]
-                if complete_misses > total_kmers - absolute_threshold:  # Stop since too many misses
-                    return []
-        # Search children since not enough hits but not enough misses only on kmer partial hits
-        return self.left_child.fast_query_experiment(filter_index_dict, partial_hits, absolute_threshold -
-                                                     complete_hits, total_kmers - complete_hits - complete_misses) + \
-            self.right_child.fast_query_experiment(filter_index_dict, partial_hits, absolute_threshold -
-                                                   complete_hits, total_kmers - complete_hits - complete_misses)
-        # Faster query (consider a dict of indices and counts to check in each filter)
 
     # Faster query (only consider a set of indices to check in each filter)
-    def faster_query_experiment(self, filter_indices, absolute_threshold):
+    def fast_query_experiment(self, filter_indices, absolute_threshold):
         partial_hits = []
         complete_hits = 0
         complete_misses = 0
@@ -162,8 +136,8 @@ class SSBTNode(object):
                 if complete_misses > len(filter_indices) - absolute_threshold:  # Stop since too many misses
                     return []
         # Search children since not enough hits but not enough misses only on kmer partial hits
-        return self.left_child.faster_query_experiment(partial_hits, absolute_threshold - complete_hits) + \
-            self.right_child.faster_query_experiment(partial_hits, absolute_threshold - complete_hits)
+        return self.left_child.fast_query_experiment(partial_hits, absolute_threshold - complete_hits) + \
+            self.right_child.fast_query_experiment(partial_hits, absolute_threshold - complete_hits)
 
     def iter_children(self):
         if self.left_child is not None:

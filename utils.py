@@ -1,16 +1,23 @@
+"""
+Utility functions that main.py uses. Here we define the individual processes for sequence reading, SBT insertion, SBT
+querying, and SBT saving. In addition, the processes also report metrics such as time elapsed, false positive rate, and
+memory used. Different hash and similarity functions are also included here for use.
+"""
 import math
 import time
 import os
 from SBT.SBT import SBT
+# from memory_profiler import profile
 
 
+# Print parameters being used
 def print_params(p):
     for key, value in p.items():
         print(key.ljust(20), value)
     print()
 
 
-# Read sequences
+# Read sequences from data file
 # @profile
 def read_sequences(file_names, sequence_len):
     sequences = {}
@@ -25,7 +32,7 @@ def read_sequences(file_names, sequence_len):
     return sequences
 
 
-# Insert sequences into SBT
+# Insert sequences into SBT using potentially different clustering methods
 # @profile
 def insert_sequences(sbt, sequences, bits_to_check, method="Greedy"):
     start = time.time()
@@ -46,23 +53,24 @@ def insert_sequences(sbt, sequences, bits_to_check, method="Greedy"):
 # mode in ("Normal", "Fast", "Faster")
 # repeat: number of times to run queries
 # @profile
-def query_sequences(sbt, q_sequences, all_sequences, method="Normal", repeat=1):
-    start = time.time()
-    for q_sequence in q_sequences.values():
-        for sequence in all_sequences.values():
-            if q_sequence in sequence:
-                pass
-    end = time.time()
-    print("Boyer-Moore Time    ", (end - start) * repeat)
+def query_sequences(sbt, q_sequences, all_sequences, method="Normal", repeat=1, boyer_moore=False):
+    # Report Boyer-Moore time to get an idea of how fast SBT runs
+    if boyer_moore:
+        start = time.time()
+        for q_sequence in q_sequences.values():
+            for sequence in all_sequences.values():
+                if q_sequence in sequence:
+                    pass
+        end = time.time()
+        print("Boyer-Moore Time    ", (end - start) * repeat)
 
+    # Begin querying sequences
     start = time.time()
     total_positives = 0
     true_positives = 0
     false_negatives = 0
     for name, q_sequence in list(q_sequences.items()) * repeat:
-        if method == "Faster":
-            results = sbt.faster_query_sequence(sequence=q_sequence)
-        elif method == "Fast":
+        if method == "Fast":
             results = sbt.fast_query_sequence(sequence=q_sequence)
         else:
             results = sbt.query_sequence(sequence=q_sequence)
@@ -146,4 +154,3 @@ def dice(a, b):
 def tanimoto(a, b):
     c = sum(a & b)
     return c / (sum(a) + sum(b) + c)
-
