@@ -1,31 +1,30 @@
 from utils import *
-# https://github.com/pythonprofilers/memory_profiler
 
 # Parameters
 p = {
-    "bloom_filter_length": 300000,            # m
+    "bloom_filter_length": 200000,            # m
     "sequence_len": 100000,
     "k": 30,                                  # k
     "query_size": 1000,                       # size of query
-    "bits_to_check": 200,                     # b'
+    "bits_to_check": 1000,                    # b'
     "num_sequences": 100,                     # n
     "num_queries": 1000,
-    "threshold": 0.9,                         # theta
+    "threshold": .7,                         # theta
 
     "node_class": "Base",                     # SBT Type ("Base", "SSBT")
     "insert_method": "Cluster2",              # ("Greedy", "Cluster1", "Cluster2")
-    "query_method": "Normal",                 # ("Normal", "Fast", "Faster")
+    "query_method": "Faster",                 # ("Normal", "Fast", "Faster")
 
     "similarity_function": cosine,            # similarity()
     "hash_functions": [hash],                 # h
-    "hash_fraction": 1                         # partial hash function simulation
+    "hash_fraction": .7                     # partial hash function simulation
 }
 
 # Report Parameters
 print_params(p)
 # Create SBT
 sbt = SBT(p["k"], p["bloom_filter_length"], p["hash_functions"], p["threshold"], p["similarity_function"],
-          p["node_class"])
+          p["node_class"], p["hash_fraction"])
 # Read Sequences
 sequences = read_sequences(file_names=['testData/sequence' + str(i) for i in range(p["num_sequences"])],
                            sequence_len=p["sequence_len"])

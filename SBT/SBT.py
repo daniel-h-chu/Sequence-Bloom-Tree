@@ -17,31 +17,29 @@ class SBT(object):
         self.threshold = threshold
         self.similarity_function = similarity_function
         if node_class is not "Base" and node_class is not "SSBT":
-            raise KeyError("Node class should be Base or SSBT")
+            raise ValueError("Node class should be Base or SSBT")
         self.NodeClass = SSBTNode if node_class is "SSBT" else BaseNode
         self.hash_fraction = hash_fraction
         self.root = None
 
-    # Creates a node for an experiment (list of sequences) and inserts it into the SBT
-    def insert_experiment(self, sequences: list, experiment_name: str):
+    def node_from_sequence(self, sequence: str, experiment_name):
         node = self.NodeClass(self.bloom_filter_length, self.hash_functions, self.similarity_function, experiment_name)
 
-        for sequence in sequences:  # Iterate through sequences
+        if self.hash_fraction == 1:
             for kmer_index in range(0, len(sequence) - self.k + 1):  # Iterate through k-mers
                 kmer = sequence[kmer_index:kmer_index + self.k]
                 node.insert_kmer(kmer)
-
-        self.insert_node(node)
+            return node
+        to_hash = np.random.random(len(sequence) - self.k + 1) < self.hash_fraction
+        for kmer_index in range(0, len(sequence) - self.k + 1):  # Iterate through k-mers
+            if to_hash[kmer_index]:
+                kmer = sequence[kmer_index:kmer_index + self.k]
+                node.insert_kmer(kmer)
+        return node
 
     # Creates a node for a single sequence and inserts it into the SBT
     def insert_sequence(self, sequence: str, experiment_name: str):
-        node = self.NodeClass(self.bloom_filter_length, self.hash_functions, self.similarity_function, experiment_name)
-
-        for kmer_index in range(0, len(sequence) - self.k + 1):  # Iterate through k-mers
-            kmer = sequence[kmer_index:kmer_index + self.k]
-            node.insert_kmer(kmer)
-
-        self.insert_node(node)
+        self.insert_node(self.node_from_sequence(sequence, experiment_name))
 
     # Insert a pre-generated node into the SBT
     def insert_node(self, node):
@@ -56,11 +54,7 @@ class SBT(object):
         if self.root is not None:
             nodes.append(self.root)
         for sequence, name in zip(sequences, experiment_names):
-            node = self.NodeClass(self.bloom_filter_length, self.hash_functions, self.similarity_function, name)
-            for kmer_index in range(0, len(sequence) - self.k + 1):  # Iterate through k-mers
-                kmer = sequence[kmer_index:kmer_index + self.k]
-                node.insert_kmer(kmer)
-            nodes.append(node)
+            nodes.append(self.node_from_sequence(sequence, name))
         # Iterate through all nodes, select the two that are the most similar and then create a parent node from them
         while len(nodes) > 1:
             max_similarity = -np.inf
@@ -83,27 +77,31 @@ class SBT(object):
         if self.root is not None:
             nodes.append(self.root)
         for sequence, name in zip(sequences, experiment_names):
-            node = self.NodeClass(self.bloom_filter_length, self.hash_functions, self.similarity_function, name)
-            for kmer_index in range(0, len(sequence) - self.k + 1):  # Iterate through k-mers
-                kmer = sequence[kmer_index:kmer_index + self.k]
-                node.insert_kmer(kmer)
-            nodes.append(node)
+            nodes.append(self.node_from_sequence(sequence, name))
         # Iterate through all nodes, select the two that are the most similar and then create a parent node from them
         while len(nodes) > 1:
+            similarities = [[0] * len(nodes) for _ in range(len(nodes))]
+            for idx1 in range(len(nodes)):
+                for idx2 in range(idx1 + 1, len(nodes)):
+                    similarities[idx1][idx2] = nodes[idx1].similarity(nodes[idx2], bits_to_check)
+                    similarities[idx2][idx1] = similarities[idx1][idx2]
             parent_nodes = []
-            while len(nodes) > 1:
+            unmatched = {i for i in range(len(nodes))}
+            while len(unmatched) > 1:
                 max_similarity = -np.inf
                 max_pair = ()
-                for idx1 in range(len(nodes)):
-                    for idx2 in range(idx1 + 1, len(nodes)):
-                        similarity = nodes[idx1].similarity(nodes[idx2], bits_to_check)
-                        if similarity > max_similarity:
-                            max_similarity = similarity
+                for idx1 in unmatched:
+                    for idx2 in unmatched:
+                        if idx1 == idx2:
+                            continue
+                        if similarities[idx1][idx2] > max_similarity:
+                            max_similarity = similarities[idx1][idx2]
                             max_pair = (idx1, idx2)
                 node = self.NodeClass.from_children(nodes[max_pair[0]], nodes[max_pair[1]])
-                nodes.remove(node.left_child)
-                nodes.remove(node.right_child)
+                unmatched.remove(max_pair[0])
+                unmatched.remove(max_pair[1])
                 parent_nodes.append(node)
+            nodes = [nodes[idx] for idx in unmatched]
             nodes.extend(parent_nodes)
         self.root = nodes[0]
 

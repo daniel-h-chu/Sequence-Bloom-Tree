@@ -8,15 +8,13 @@ from bitarray import bitarray
 class BaseNode(object):
     count = 0  # How many Nodes have been created
 
-    def __init__(self, bloom_filter_length, hash_functions, similarity_function, experiment_name, bloom_filter=None,
-                 hash_fraction=1):
+    def __init__(self, bloom_filter_length, hash_functions, similarity_function, experiment_name, bloom_filter=None):
         self.bloom_filter_length = bloom_filter_length
         self.hash_functions = hash_functions
         self.similarity_function = similarity_function
         self.experiment_name = experiment_name
-        self.hash_fraction = hash_fraction
         # Initialize Bloom Filters to all 0s
-        self.bloom_filter = bitarray('0') * bloom_filter_length if bloom_filter is None else bloom_filter
+        self.bloom_filter = bloom_filter if bloom_filter is not None else bitarray('0') * bloom_filter_length
         self.left_child = None
         self.right_child = None
         # Give node an id
@@ -79,18 +77,16 @@ class BaseNode(object):
         num_misses = 0
         for kmer in kmers:  # Check if kmer is present
             if self.query_kmer(kmer):
-                hits += [kmer]
-                if len(hits) >= absolute_threshold:  # Search children since enough hits
-                    if self.left_child is None:  # Return since this node is a leaf/exp
-                        return [self.experiment_name]
-                    return self.left_child.query_experiment(hits, absolute_threshold) + \
-                        self.right_child.query_experiment(hits, absolute_threshold)
+                hits.append(kmer)
             else:
                 num_misses += 1
                 if num_misses > len(kmers) - absolute_threshold:  # Stop since too many misses
                     return []
-        print('oops')
-        return []  # Should not reach here
+        # Passed threshold
+        if self.left_child is None:  # Return since this node is a leaf/exp
+            return [self.experiment_name]
+        return self.left_child.query_experiment(hits, absolute_threshold) + \
+            self.right_child.query_experiment(hits, absolute_threshold)
 
     # Faster query (consider a dict of indices and counts to check in each filter)
     def fast_query_experiment(self, filter_index_dict, filter_indices, absolute_threshold, total_kmers):
@@ -99,21 +95,18 @@ class BaseNode(object):
         num_misses = 0
         for index in filter_indices:  # Check if kmer is present
             if self.bloom_filter[index]:
-                filter_indices_hits += [index]
+                filter_indices_hits.append(index)
                 num_hits += filter_index_dict[index]
-                if num_hits >= absolute_threshold:
-                    if self.left_child is None:  # Return since this node is a leaf/exp
-                        return [self.experiment_name]
-                    return self.left_child.fast_query_experiment(filter_index_dict, filter_indices_hits,
-                                                                 absolute_threshold, num_hits) + \
-                        self.right_child.fast_query_experiment(filter_index_dict, filter_indices_hits,
-                                                               absolute_threshold, num_hits)
             else:
                 num_misses += filter_index_dict[index]
                 if num_misses > total_kmers - absolute_threshold:  # Stop since too many misses
                     return []
-        print('oops')
-        return []  # Should not reach here
+        # Passed threshold
+        if self.left_child is None:  # Return since this node is a leaf/exp
+            return [self.experiment_name]
+        return self.left_child.fast_query_experiment(filter_index_dict, filter_indices_hits,
+                                                     absolute_threshold, num_hits) + \
+            self.right_child.fast_query_experiment(filter_index_dict, filter_indices_hits, absolute_threshold, num_hits)
 
     # Faster query (only consider a set of indices to check in each filter)
     def faster_query_experiment(self, filter_indices, absolute_threshold):
@@ -121,18 +114,16 @@ class BaseNode(object):
         num_misses = 0
         for index in filter_indices:  # Check if kmer is present
             if self.bloom_filter[index]:
-                hits += [index]
-                if len(hits) >= absolute_threshold:
-                    if self.left_child is None:  # Return since this node is a leaf/exp
-                        return [self.experiment_name]
-                    return self.left_child.faster_query_experiment(hits, absolute_threshold) + \
-                        self.right_child.faster_query_experiment(hits, absolute_threshold)
+                hits.append(index)
             else:
                 num_misses += 1
                 if num_misses > len(filter_indices) - absolute_threshold:  # Stop since too many misses
                     return []
-        print('oops')
-        return []  # Should not reach here
+        # Passed threshold
+        if self.left_child is None:  # Return since this node is a leaf/exp
+            return [self.experiment_name]
+        return self.left_child.faster_query_experiment(hits, absolute_threshold) + \
+            self.right_child.faster_query_experiment(hits, absolute_threshold)
 
     # Print experiment name and the bits of the bloom filter, then iterate on children
     def print(self):

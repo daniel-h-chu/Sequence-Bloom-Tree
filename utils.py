@@ -2,7 +2,6 @@ import math
 import time
 import os
 from SBT.SBT import SBT
-from memory_profiler import profile
 
 
 def print_params(p):
@@ -72,7 +71,7 @@ def query_sequences(sbt, q_sequences, all_sequences, method="Normal", repeat=1):
         false_negatives += name not in results
     end = time.time()
     print("Query Time          ", end - start)
-    print("Precision           ", true_positives / total_positives)
+    print("Precision           ", true_positives / total_positives if total_positives > 0 else 0)
     print("False Negatives Oops", false_negatives)
 
 
@@ -111,7 +110,6 @@ def hash_lcg(s: str):
         x << 2
         x += hash_dict[c]
     return x
-
 
 
 # Bit Similarity Function

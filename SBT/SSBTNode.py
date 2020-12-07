@@ -15,13 +15,11 @@ def ssbt_similarity_function(a, b):
 class SSBTNode(object):
     count = 0  # How many Nodes have been created
 
-    def __init__(self, bloom_filter_length, hash_functions, similarity_function, experiment_name, sim_filter=None,
-                 hash_fraction=1):
+    def __init__(self, bloom_filter_length, hash_functions, similarity_function, experiment_name, sim_filter=None):
         self.bloom_filter_length = bloom_filter_length
         self.hash_function = hash_functions[0]  # Only need 1 hash function
         self.similarity_function = ssbt_similarity_function  # Small pertubations to break ties
         self.experiment_name = experiment_name
-        self.hash_fraction = hash_fraction
         # Initialize Bloom Filters to all 0s
         self.sim_filter = bitarray('0') * bloom_filter_length if sim_filter is None else sim_filter
         self.rem_filter = None
@@ -37,15 +35,14 @@ class SSBTNode(object):
         node.experiment_name = "I" + str(node.id)  # Label inner nodes
         # Set new node filters
         node.sim_filter &= right_child.sim_filter
-        node.rem_filter = left_child.sim_filter | right_child.sim_filter
-        if left_child.rem_filter is not None:
-            node.rem_filter = node.rem_filter | left_child.rem_filter
-        if left_child.rem_filter is not None:
-            node.rem_filter = node.rem_filter | right_child.rem_filter
-        node.rem_filter &= ~node.sim_filter
-        # Remove redundant bits
         left_child.sim_filter &= ~node.sim_filter
         right_child.sim_filter &= ~node.sim_filter
+        node.rem_filter = left_child.sim_filter | right_child.sim_filter
+        if left_child.rem_filter is not None:
+            node.rem_filter |= left_child.rem_filter
+        if left_child.rem_filter is not None:
+            node.rem_filter |= right_child.rem_filter
+        # Remove redundant bits
         # Assign children
         node.left_child = left_child
         node.right_child = right_child
@@ -116,7 +113,7 @@ class SSBTNode(object):
                 if complete_hits >= absolute_threshold:  # Enough hits to return all children
                     return self.iter_children()
             elif self.rem_filter is not None and self.query_kmer_rem(kmer):  # Partial hit:some children have,some don't
-                partial_hits += [kmer]
+                partial_hits.append(kmer)
             else:  # Complete miss - no children have
                 complete_misses += 1
                 if complete_misses > len(kmers) - absolute_threshold:  # Stop since too many misses
@@ -136,7 +133,7 @@ class SSBTNode(object):
                 if complete_hits >= absolute_threshold:  # Enough hits to return all children
                     return self.iter_children()
             elif self.rem_filter is not None and self.rem_filter[index]:  # Partial hit - some children have, some don't
-                partial_hits += [index]
+                partial_hits.append(index)
             else:  # Complete miss - no children have
                 complete_misses += filter_index_dict[index]
                 if complete_misses > total_kmers - absolute_threshold:  # Stop since too many misses
@@ -159,7 +156,7 @@ class SSBTNode(object):
                 if complete_hits >= absolute_threshold:  # Enough hits to return all children
                     return self.iter_children()
             elif self.rem_filter is not None and self.rem_filter[index]:  # Partial hit - some children have, some don't
-                partial_hits += [index]
+                partial_hits.append(index)
             else:  # Complete miss - no children have
                 complete_misses += 1
                 if complete_misses > len(filter_indices) - absolute_threshold:  # Stop since too many misses
