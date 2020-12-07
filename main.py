@@ -12,19 +12,22 @@ p = {
     "k": 30,                            # k - Size of kmer
     "bits_to_check": 1000,              # b' - Number of bits to check when clustering for insertions
     "num_sequences": 100,               # n - Number of sequences to insert
-    "threshold": 0.7,                   # theta - Proportion of kmers that must hit in order to return an experiment
+    "threshold": 0.8,                   # theta - Proportion of kmers that must hit in order to return an experiment
 
     "sequence_len": 100000,             # Size of each sequence inserted
     "query_size": 1000,                 # Size of query sequence
     "num_queries": 1000,                # Number of queries to perform
 
-    "node_class": "SSBT",               # SBT Type ("Base", "SSBT")
+    "node_class": "SSBT",               # SBT Type ("Base", "SSBT", "HowDet")
     "insert_method": "Cluster2",        # SBT Insertion Method - ("Greedy", "Cluster1", "Cluster2")
     "query_method": "Fast",             # SBT Query Method - ("Normal", "Fast")
 
-    "similarity_function": cosine,     # Similarity metric to compare filters - (hamming, cosine, jaccard, etc)
+    "similarity_function": and_hamming,     # Similarity metric to compare filters - (hamming, cosine, jaccard, etc)
     "hash_functions": [hash],           # h - Function to hash kmers (python's hash is the only good hash function)
-    "hash_fraction": 1                  # Simulate partial hash function (Note SSBT works well if hash_fraction = 1)
+    "hash_fraction": 1,                  # Simulate partial hash function (Note SSBT works well if hash_fraction = 1)
+
+    "print_sbt": False,                  # Print SBT graph
+    "print_type": "Bits",                # What to print in SBT nodes - ("Bits", "Names")
 }
 
 # Report Parameters
@@ -53,5 +56,4 @@ save_sbt(sbt=sbt, file_name="testData/sbt_" + p["node_class"])
 print("Reads Size (Bytes)  ", int(p["sequence_len"] * p["num_sequences"] / 4))
 
 # Print Graph Itself
-# print(sbt.graphviz_names())
-# print(sbt.graphviz_bits())
+print_graph(sbt, p["print_sbt"], p["print_type"])

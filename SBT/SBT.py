@@ -6,6 +6,7 @@ different insertion algorithms), querying (and different querying algorithms), a
 from graphviz import Digraph
 from SBT.SSBTNode import SSBTNode
 from SBT.BaseNode import BaseNode
+from SBT.HowDetNode import HowDetNode
 import pickle
 import numpy as np
 
@@ -18,9 +19,9 @@ class SBT(object):
         self.hash_functions = hash_functions
         self.threshold = threshold
         self.similarity_function = similarity_function
-        if node_class is not "Base" and node_class is not "SSBT":
-            raise ValueError("Node class should be Base or SSBT")
-        self.NodeClass = SSBTNode if node_class is "SSBT" else BaseNode
+        if node_class is not "Base" and node_class is not "SSBT" and node_class is not "HowDet":
+            raise ValueError("Node class should be Base or SSBT or HowDet")
+        self.NodeClass = SSBTNode if node_class is "SSBT" else HowDetNode if node_class is "HowDet" else BaseNode
         self.hash_fraction = hash_fraction
         self.root = None
 
@@ -118,6 +119,7 @@ class SBT(object):
                         if similarities[idx1][idx2] > max_similarity:
                             max_similarity = similarities[idx1][idx2]
                             max_pair = (idx1, idx2)
+                # Create matched parent node
                 node = self.NodeClass.from_children(nodes[max_pair[0]], nodes[max_pair[1]])
                 unmatched.remove(max_pair[0])
                 unmatched.remove(max_pair[1])

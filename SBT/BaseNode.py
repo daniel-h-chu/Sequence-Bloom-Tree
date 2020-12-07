@@ -1,4 +1,3 @@
-import random
 from bitarray import bitarray
 
 
@@ -18,6 +17,8 @@ class BaseNode(object):
         self.id = str(BaseNode.count)
         BaseNode.count += 1
 
+    """ Creates a new parent Node whose children are left_child and right_child. The Node's filter(s) are set so that
+    the SBT Topology/Relationship between nodes is maintained """
     @staticmethod
     def from_children(left_child, right_child):
         node = left_child.copy()
@@ -27,26 +28,25 @@ class BaseNode(object):
         node.right_child = right_child
         return node
 
-    # Bloom filter function: insert kmer
+    """ Insert a kmer into the Node's bloom filter """
     def insert_kmer(self, kmer):
         for hash_function in self.hash_functions:
             self.bloom_filter[hash_function(kmer) % self.bloom_filter_length] = True
 
-    # Bloom filter function: query kmer
+    """ Query a kmer from the Node's bloom filter """
     def query_kmer(self, kmer):
         for hash_function in self.hash_functions:  # Check if any bits are 0, if so return false
             if not self.bloom_filter[hash_function(kmer) % self.bloom_filter_length]:
                 return False
         return True
 
-    # Bloom filter function: return similarity between this node's bloom filter and another node's
+    """ Return similarity between this Node's bloom filter and another node's bloom filter """
     def similarity(self, node, bits_to_check=None):
         if bits_to_check is None:
-            return self.similarity_function(self.bloom_filter, node.bloom_filter) + random.random() * 1e-9
-        return self.similarity_function(self.bloom_filter[:bits_to_check], node.bloom_filter[:bits_to_check]) + \
-            random.random() * 1e-9  # Small pertubation to break ties
+            return self.similarity_function(self.bloom_filter, node.bloom_filter)
+        return self.similarity_function(self.bloom_filter[:bits_to_check], node.bloom_filter[:bits_to_check])
 
-    # Deep copy node (except for left and right children)
+    """ Deep copy fields of node (except for left and right children) """
     def copy(self):
         return BaseNode(self.bloom_filter_length, self.hash_functions, self.similarity_function, self.experiment_name,
                         self.bloom_filter.copy())

@@ -7,6 +7,7 @@ import math
 import time
 import os
 from SBT.SBT import SBT
+import random
 # from memory_profiler import profile
 
 
@@ -103,6 +104,15 @@ def save_sbt(sbt, file_name):
     print("SBT Size (Bytes)    ", os.stat(file_name)[6])
 
 
+# Print Graph Itself
+def print_graph(sbt, print_sbt, print_type):
+    if print_sbt:
+        if print_type == "Bits":
+            print(sbt.graphviz_bits())
+        if print_type == "Names":
+            print(sbt.graphviz_names())
+
+
 hash_dict = {
     'A': 0,
     'C': 1,
@@ -120,37 +130,43 @@ def hash_lcg(s: str):
     return x
 
 
-# Bit Similarity Function
+# Bit Similarity Function (Small pertubations to break ties)
 def hamming(a, b):
-    return -sum(a ^ b)
+    return -sum(a ^ b) + random.random() * 1e-9
+
+
+# Bit Similarity Function (hamming to break ties)
+def and_hamming(a, b):
+    return sum(a & b) - sum(a ^ b) * 1e-9
 
 
 # Bit Similarity Function
 def cosine(a, b):
-    return sum(a & b) / math.sqrt(sum(a) * sum(b))
+    d = math.sqrt(sum(a) * sum(b))
+    return (sum(a & b) / d if d else 0) + random.random() * 1e-9
 
 
 # Bit Similarity Function
 def jaccard(a, b):
-    return 1 - sum(a & b) / sum(a | b)
+    return 1 - sum(a & b) / sum(a | b) + random.random() * 1e-9
 
 
 # Bit Similarity Function
 def manhattan(a, b):
-    return sum(a) + sum(b) - 2 * sum(a & b)
+    return sum(a) + sum(b) - 2 * sum(a & b) + random.random() * 1e-9
 
 
 # Bit Similarity Function
 def euclidian(a, b):
-    return math.sqrt(manhattan(a, b))
+    return math.sqrt(manhattan(a, b)) + random.random() * 1e-9
 
 
 # Bit Similarity Function
 def dice(a, b):
-    return 2 * sum(a & b) / (sum(a) + sum(b))
+    return 2 * sum(a & b) / (sum(a) + sum(b)) + random.random() * 1e-9
 
 
 # Bit Similarity Function
 def tanimoto(a, b):
     c = sum(a & b)
-    return c / (sum(a) + sum(b) + c)
+    return c / (sum(a) + sum(b) + c) + random.random() * 1e-9

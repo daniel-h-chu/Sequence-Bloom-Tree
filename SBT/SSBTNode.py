@@ -1,21 +1,13 @@
 from bitarray import bitarray
 
 
-def hamming(a, b):
-    return -sum(a ^ b)
-
-
-def ssbt_similarity_function(a, b):  # SSBT cannot customize similarity function?
-    return sum(a & b) + hamming(a, b) * 1e-9
-
-
 class SSBTNode(object):
     count = 0  # How many Nodes have been created
 
     def __init__(self, bloom_filter_length, hash_functions, similarity_function, experiment_name, sim_filter=None):
         self.bloom_filter_length = bloom_filter_length
         self.hash_function = hash_functions[0]  # Only need 1 hash function
-        self.similarity_function = ssbt_similarity_function  # Small pertubations to break ties
+        self.similarity_function = similarity_function
         self.experiment_name = experiment_name
         # Initialize Bloom Filters to all 0s
         self.sim_filter = bitarray('0') * bloom_filter_length if sim_filter is None else sim_filter
@@ -26,6 +18,8 @@ class SSBTNode(object):
         self.id = str(SSBTNode.count)
         SSBTNode.count += 1
 
+    """ Creates a new parent Node whose children are left_child and right_child. The Node's filter(s) are set so that
+    the SBT Topology/Relationship between nodes is maintained """
     @staticmethod
     def from_children(left_child, right_child):
         node = left_child.copy()
@@ -39,31 +33,30 @@ class SSBTNode(object):
             node.rem_filter |= left_child.rem_filter
         if left_child.rem_filter is not None:
             node.rem_filter |= right_child.rem_filter
-        # Remove redundant bits
         # Assign children
         node.left_child = left_child
         node.right_child = right_child
         return node
 
-    # Bloom filter function: insert kmer
+    """ Insert a kmer into the Node's similarity filter """
     def insert_kmer(self, kmer):
         self.sim_filter[self.hash_function(kmer) % self.bloom_filter_length] = True
 
-    # Bloom filter function: insert kmer
+    """ Query a kmer from the Node's similarity filter """
     def query_kmer_sim(self, kmer):
         return self.sim_filter[self.hash_function(kmer) % self.bloom_filter_length]
 
-    # Bloom filter function: insert kmer
+    """ Query a kmer from the Node's remainder filter """
     def query_kmer_rem(self, kmer):
         return self.rem_filter[self.hash_function(kmer) % self.bloom_filter_length]
 
-    # Bloom filter function: return similarity between this node's bloom filter and another node's
+    """ Return similarity between this Node's similarity filter and another node's similarity filter """
     def similarity(self, node, bits_to_check=None):
         if bits_to_check is None:
             return self.similarity_function(self.sim_filter, node.sim_filter)
         return self.similarity_function(self.sim_filter[:bits_to_check], node.sim_filter[:bits_to_check])
 
-    # Deep copy node (except for left and right children)
+    """ Deep copy fields of node (except for left and right children) """
     def copy(self):
         return SSBTNode(self.bloom_filter_length, [self.hash_function], self.similarity_function, self.experiment_name,
                         self.sim_filter.copy())
