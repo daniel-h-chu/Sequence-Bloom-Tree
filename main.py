@@ -18,16 +18,16 @@ p = {
     "query_size": 1000,                 # Size of query sequence
     "num_queries": 1000,                # Number of queries to perform
 
-    "node_class": "SSBT",               # SBT Type ("Base", "SSBT", "HowDet")
+    "node_class": "Base",               # SBT Type ("Base", "SSBT", "HowDet")
     "insert_method": "Cluster2",        # SBT Insertion Method - ("Greedy", "Cluster1", "Cluster2")
     "query_method": "Fast",             # SBT Query Method - ("Normal", "Fast")
 
-    "similarity_function": and_hamming,     # Similarity metric to compare filters - (hamming, cosine, jaccard, etc)
-    "hash_functions": [hash],           # h - Function to hash kmers (python's hash is the only good hash function)
-    "hash_fraction": 1,                  # Simulate partial hash function (Note SSBT works well if hash_fraction = 1)
+    "similarity_function": hamming,     # Similarity metric to compare filters - (hamming, cosine, jaccard, etc)
+    "hash_functions": [hash],           # h - Function to hash kmers
+    "hash_fraction": 1,                 # Simulate partial hash function
 
-    "print_sbt": False,                  # Print SBT graph
-    "print_type": "Bits",                # What to print in SBT nodes - ("Bits", "Names")
+    "print_sbt": False,                 # Print SBT graph
+    "print_type": "Bits",               # What to print in SBT nodes - ("Bits", "Names")
 }
 
 # Report Parameters

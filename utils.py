@@ -81,7 +81,9 @@ def query_sequences(sbt, q_sequences, all_sequences, method="Normal", repeat=1, 
     end = time.time()
     print("Query Time          ", end - start)
     print("Precision           ", true_positives / total_positives if total_positives > 0 else 0)
-    print("False Negatives Oops", false_negatives)
+    print("True Positives      ", true_positives)
+    print("False Positives     ", total_positives - true_positives)
+    print("False Negatives     ", false_negatives)
 
 
 # Load SBT and report size
