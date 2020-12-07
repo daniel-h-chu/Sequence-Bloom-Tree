@@ -21,9 +21,12 @@ class BaseNode(object):
     the SBT Topology/Relationship between nodes is maintained """
     @staticmethod
     def from_children(left_child, right_child):
+        # Create new node
         node = left_child.copy()
         node.experiment_name = "I" + str(node.id)  # Label inner nodes
+        # Set new node filters
         node.bloom_filter |= right_child.bloom_filter
+        # Set new node's children
         node.left_child = left_child
         node.right_child = right_child
         return node
@@ -40,7 +43,8 @@ class BaseNode(object):
                 return False
         return True
 
-    """ Return similarity between this Node's bloom filter and another node's bloom filter """
+    """ Return similarity between the first (# bits_to_check) bits of this Node's bloom filter and the first 
+    (# bits_to_check) of another node's bloom filter """
     def similarity(self, node, bits_to_check=None):
         if bits_to_check is None:
             return self.similarity_function(self.bloom_filter, node.bloom_filter)
@@ -51,7 +55,8 @@ class BaseNode(object):
         return BaseNode(self.bloom_filter_length, self.hash_functions, self.similarity_function, self.experiment_name,
                         self.bloom_filter.copy())
 
-    # Insert node based on bloom filter similarity and child presence
+    """ Insert a single node to an existing SBT greedily by traversing down the most similar child starting from the 
+    root """
     def insert_experiment(self, node):
         # 0 children - copy current node into left child and insert into right child
         if self.left_child is None:
@@ -69,7 +74,9 @@ class BaseNode(object):
         # Union bloom filter
         self.bloom_filter |= node.bloom_filter
 
-    # Insert node based on presence of kmers and an absolute threshold
+    """ Query a list of kmers from a SBT by checking whether the respective bit is turned on in the bloom filter. If at
+     least (# absolute_threshold) kmers are present, then the query proceeds to the children. If the current node is a 
+     leaf then the node's name is returned. """
     def query_experiment(self, kmers: list, absolute_threshold):
         hits = []
         num_misses = 0
@@ -86,31 +93,33 @@ class BaseNode(object):
         return self.left_child.query_experiment(hits, absolute_threshold) + \
             self.right_child.query_experiment(hits, absolute_threshold)
 
-    # Faster query (only consider a set of indices to check in each filter)
+    """ Faster way to query a list of kmers from a SBT by only hashing the kmers once and then checking a list of 
+    filter_indices that the kmers hash to """
     def fast_query_experiment(self, filter_indices, absolute_threshold):
         hits = []
         num_misses = 0
-        for index in filter_indices:  # Check if kmer is present
-            if self.bloom_filter[index]:
+        for index in filter_indices:  # Check if each index is a hit
+            if self.bloom_filter[index]:  # Hit
                 hits.append(index)
-            else:
+            else:  # Complete miss - none of descendants have a hit at that index
                 num_misses += 1
                 if num_misses > len(filter_indices) - absolute_threshold:  # Stop since too many misses
                     return []
         # Passed threshold
-        if self.left_child is None:  # Return since this node is a leaf/exp
+        if self.left_child is None:  # Return since this node is a leaf
             return [self.experiment_name]
         return self.left_child.fast_query_experiment(hits, absolute_threshold) + \
             self.right_child.fast_query_experiment(hits, absolute_threshold)
 
-    # Print experiment name and the bits of the bloom filter, then iterate on children
+    """ Print experiment name and the bits of the bloom filter, then call print on children """
     def print(self):
         print(self.experiment_name, '\t', ''.join(map(str, map(int, self.bloom_filter))))
         if self.left_child is not None:
             self.left_child.print()
             self.right_child.print()
 
-    # Obtain experiment name or bits of the bloom filter, then add to a graphviz Graph, then iterate on children
+    """ Obtain experiment name (bits=False) or bits (bits=True) of the bloom filter, then add to a graphviz Graph, then 
+    iterate on children """
     def graphviz(self, graph, bits):
         graph.node(self.id, ''.join(map(str, map(int, self.bloom_filter))) if bits else self.experiment_name)
         if self.left_child is not None:

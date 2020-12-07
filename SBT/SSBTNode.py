@@ -11,7 +11,7 @@ class SSBTNode(object):
         self.experiment_name = experiment_name
         # Initialize Bloom Filters to all 0s
         self.sim_filter = bitarray('0') * bloom_filter_length if sim_filter is None else sim_filter
-        self.rem_filter = None
+        self.rem_filter = None  # None if node is a leaf
         self.left_child = None
         self.right_child = None
         # Give node an id
@@ -22,9 +22,10 @@ class SSBTNode(object):
     the SBT Topology/Relationship between nodes is maintained """
     @staticmethod
     def from_children(left_child, right_child):
+        # Create new node
         node = left_child.copy()
         node.experiment_name = "I" + str(node.id)  # Label inner nodes
-        # Set new node filters
+        # Set new node filters and update child node filters
         node.sim_filter &= right_child.sim_filter
         left_child.sim_filter &= ~node.sim_filter
         right_child.sim_filter &= ~node.sim_filter
@@ -33,7 +34,7 @@ class SSBTNode(object):
             node.rem_filter |= left_child.rem_filter
         if left_child.rem_filter is not None:
             node.rem_filter |= right_child.rem_filter
-        # Assign children
+        # Set new node's children
         node.left_child = left_child
         node.right_child = right_child
         return node
@@ -50,7 +51,8 @@ class SSBTNode(object):
     def query_kmer_rem(self, kmer):
         return self.rem_filter[self.hash_function(kmer) % self.bloom_filter_length]
 
-    """ Return similarity between this Node's similarity filter and another node's similarity filter """
+    """ Return similarity between the first (# bits_to_check) bits of this Node's sim filter and the first 
+    (# bits_to_check) of another node's sim filter """
     def similarity(self, node, bits_to_check=None):
         if bits_to_check is None:
             return self.similarity_function(self.sim_filter, node.sim_filter)
@@ -61,7 +63,8 @@ class SSBTNode(object):
         return SSBTNode(self.bloom_filter_length, [self.hash_function], self.similarity_function, self.experiment_name,
                         self.sim_filter.copy())
 
-    # Insert node based on bloom filter similarity and child presence
+    """ Insert a single node to an existing SBT greedily by traversing down the most similar child starting from the 
+    root """
     def insert_experiment(self, node):
         # 0 children - copy current node into left child and insert into right child
         if self.left_child is None:
@@ -71,11 +74,12 @@ class SSBTNode(object):
             new_sim_filter = self.sim_filter & node.sim_filter
             self.rem_filter = (self.sim_filter & ~new_sim_filter) | (node.sim_filter & ~new_sim_filter)
             self.sim_filter = new_sim_filter
-            # These might not be necessary
+            # Drop bits that are already similar in a parent node
             self.left_child.sim_filter &= ~self.sim_filter
             self.right_child.sim_filter &= ~self.sim_filter
         # 2 children - iterate into the more similar child
         else:
+            # Update filter before iterating onto similar child
             new_sim_filter = self.sim_filter & node.sim_filter  # If node is 1 then sim filter remains 1
             new_rem_filter = self.rem_filter | (self.sim_filter ^ node.sim_filter)  # Not all or nothing filter
             new_node_filter = ~self.sim_filter & node.sim_filter  # If sim filter is 1, then don't have to carry sim
@@ -84,7 +88,7 @@ class SSBTNode(object):
             self.sim_filter = new_sim_filter
             self.rem_filter = new_rem_filter
             node.sim_filter = new_node_filter
-
+            # Iterate onto more similar child
             left_similarity = self.left_child.similarity(node)
             right_similarity = self.right_child.similarity(node)
             if left_similarity > right_similarity:
@@ -92,19 +96,22 @@ class SSBTNode(object):
             else:
                 self.right_child.insert_experiment(node)
 
-    # Insert node based on presence of kmers and an absolute threshold
+    """ Query a list of kmers from a SBT by checking whether the respective bit is turned on in the bloom filter. If at
+     least (# absolute_threshold) kmers are present, then the query returns all children nodes. If at least |kmers| - 
+      absolute_threshold kmers are not present, then the subtree at this node is pruned from search. Lastly, if neither
+      of those two conditions are met, then the query proceeds to the children. """
     def query_experiment(self, kmers: list, absolute_threshold):
         partial_hits = []
         complete_hits = 0
         complete_misses = 0
         for kmer in kmers:  # Check if kmer is present
-            if self.query_kmer_sim(kmer):  # Complete hit - all children have
+            if self.query_kmer_sim(kmer):  # Complete hit - all descendants have
                 complete_hits += 1
-                if complete_hits >= absolute_threshold:  # Enough hits to return all children
+                if complete_hits >= absolute_threshold:  # Enough hits to return all descendants
                     return self.iter_children()
-            elif self.rem_filter is not None and self.query_kmer_rem(kmer):  # Partial hit:some children have,some don't
+            elif self.rem_filter is not None and self.query_kmer_rem(kmer):  # Partial hit : some descendant have
                 partial_hits.append(kmer)
-            else:  # Complete miss - no children have
+            else:  # Complete miss - no descendants have
                 complete_misses += 1
                 if complete_misses > len(kmers) - absolute_threshold:  # Stop since too many misses
                     return []
@@ -112,19 +119,20 @@ class SSBTNode(object):
         return self.left_child.query_experiment(partial_hits, absolute_threshold - complete_hits) + \
             self.right_child.query_experiment(partial_hits, absolute_threshold - complete_hits)
 
-    # Faster query (only consider a set of indices to check in each filter)
+    """ Faster way to query a list of kmers from a SBT by only hashing the kmers once and then checking a list of 
+    filter_indices that the kmers hash to """
     def fast_query_experiment(self, filter_indices, absolute_threshold):
         partial_hits = []
         complete_hits = 0
         complete_misses = 0
-        for index in filter_indices:  # Check if kmer is present
-            if self.sim_filter[index]:  # Complete hit - all children have
+        for index in filter_indices:  # Check if each index is a hit
+            if self.sim_filter[index]:  # Complete hit - all descendants have
                 complete_hits += 1
-                if complete_hits >= absolute_threshold:  # Enough hits to return all children
+                if complete_hits >= absolute_threshold:  # Enough hits to return all descendants
                     return self.iter_children()
-            elif self.rem_filter is not None and self.rem_filter[index]:  # Partial hit - some children have, some don't
+            elif self.rem_filter is not None and self.rem_filter[index]:  # Partial hit - some descendants have
                 partial_hits.append(index)
-            else:  # Complete miss - no children have
+            else:  # Complete miss - no descendants have
                 complete_misses += 1
                 if complete_misses > len(filter_indices) - absolute_threshold:  # Stop since too many misses
                     return []
@@ -132,12 +140,13 @@ class SSBTNode(object):
         return self.left_child.fast_query_experiment(partial_hits, absolute_threshold - complete_hits) + \
             self.right_child.fast_query_experiment(partial_hits, absolute_threshold - complete_hits)
 
+    """ Returns a list of the names of all descendant nodes """
     def iter_children(self):
         if self.left_child is not None:
             return self.left_child.iter_children() + self.right_child.iter_children()
         return [self.experiment_name]
 
-    # Print experiment name and the bits of the bloom filter, then iterate on children
+    """ Print experiment name and the bits of the bloom filter, then call print on children """
     def print(self):
         print(self.experiment_name, '\t',
               ''.join(map(str, map(int, self.sim_filter))), '\n',
@@ -146,7 +155,8 @@ class SSBTNode(object):
             self.left_child.print()
             self.right_child.print()
 
-    # Obtain experiment name or bits of the bloom filter, then add to a graphviz Graph, then iterate on children
+    """ Obtain experiment name (bits=False) or bits (bits=True) of the bloom filter, then add to a graphviz Graph, then 
+    iterate on children """
     def graphviz(self, graph, bits):
         graph.node(self.id,
                    ''.join(map(str, map(int, self.sim_filter))) + '\n' + (''.join(map(str, map(int, self.rem_filter)))
