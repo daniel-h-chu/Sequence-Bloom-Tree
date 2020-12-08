@@ -15,6 +15,9 @@ data into SBT -> Querying sequences from the SBT -> Saving the SBT). The amount 
 the precision (TP / (TP + FP)) of the queries is also reported along with the uncompressed size of the SBT
 after saving. Paramters in dictionary p can be adjusted to change  the benchmarking process or change the 
 SBT implementation.
+
+Run pipelined_main.py to automate the running of several benchmarking simulations (i.e. running main.py with 
+different params)
     
     
 Parameter Descriptions: 
@@ -81,6 +84,19 @@ Parameter Descriptions:
     print_type: str (Must be one of ["Bits", "Names"])
         If print_sbt is true, then we print either the bits of the filters themselves (print_type="Bits") or 
         we print the experiment name corresponding to each filter (print_type="Names")
+        
+    sequence_prefix: str
+        The prefix of your genome files. For example 
+        If your genome files are named "file/genome0", "file/genome1", ... then sequence_prefix = "file/genome"
+        
+    pandas_location: str
+        Where your experiment outputs should be saved as an excel file
+
+    sbt_location: str
+        Where the SBT should be saved
+
+    benchmark_name: str
+        What to name this experiment
         
 File Descriptions:
 
