@@ -68,3 +68,4 @@ for experiment in double_experiments:
             p["benchmark_name"] = experiment["keys"][0] + str(value0) + experiment["keys"][1] + str(value1)
             p[experiment["keys"][0]] = value0
             p[experiment["keys"][1]] = value1
+            main(p)
