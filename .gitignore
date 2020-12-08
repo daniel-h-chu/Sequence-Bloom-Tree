@@ -1,2 +1,5 @@
 testData/*
+testData/sequence*
 
+*.csv
+sbt_data/sbt_Base
