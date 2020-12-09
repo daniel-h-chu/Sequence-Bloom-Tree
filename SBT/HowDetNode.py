@@ -108,7 +108,7 @@ class HowDetNode(object):
                     if complete_hits >= absolute_threshold:  # Enough hits to return all descendants
                         return self.iter_children()
                 else:  # Complete Miss
-                    complete_misses += self.query_kmer_how(kmer)
+                    complete_misses += 1
                     if complete_misses > len(kmers) - absolute_threshold:  # Stop since too many misses
                         return []
         # If the node is an inner node, then first check det before checking how

@@ -9,6 +9,7 @@ import os
 import pandas as pd
 from SBT.SBT import SBT
 import random
+from collections import defaultdict
 # from memory_profiler import profile
 
 
@@ -57,44 +58,55 @@ def insert_sequences(sbt, sequences, bits_to_check, dictionary, method="Greedy")
 # mode in ("Normal", "Fast", "Faster")
 # repeat: number of times to run queries
 # @profile
-def query_sequences(sbt, q_sequences, all_sequences, dictionary, num_queries, method="Normal", repeat=1):
+def query_sequences(sbt, all_sequences, dictionary, num_queries, query_size, method="Normal"):
+    queries = []
+    for sequence in all_sequences.values():
+        idx = random.randint(0, len(sequence) - query_size)
+        queries += [sequence[idx:idx+query_size]]
     # Report Boyer-Moore time to get an idea of how fast SBT runs
-    # if boyer_moore:
-    #     start = time.time()
-    #     for q_sequence in q_sequences.values():
-    #         for sequence in all_sequences.values():
-    #             if q_sequence in sequence:
-    #                 pass
-    #     end = time.time()
-    #     print("Boyer-Moore Time    ", (end - start) * repeat)
+    hits = defaultdict(list)
+    start = time.time()
+    for query in queries:
+        for name, sequence in all_sequences.items():
+            if query in sequence:
+                hits[query] += [name]
+    end = time.time()
+    dictionary["boyer_moore_time"] = end - start
+    print("Boyer-Moore Time    ", dictionary["boyer_moore_time"])
 
     # Begin querying sequences
     start = time.time()
     total_positives = 0
     true_positives = 0
     false_negatives = 0
+    total_negatives = 0
     queries_done = 0
     while queries_done < num_queries:
-        for name, q_sequence in list(q_sequences.items()):
+        for query in queries:
             queries_done += 1
             if method == "Fast":
-                results = sbt.fast_query_sequence(sequence=q_sequence)
+                results = sbt.fast_query_sequence(sequence=query)
             else:
-                results = sbt.query_sequence(sequence=q_sequence)
+                results = sbt.query_sequence(sequence=query)
             total_positives += len(results)
-            true_positives += name in results
-            false_negatives += name not in results
+            total_negatives += len(all_sequences) - len(results)
+            for name in hits[query]:
+                true_positives += name in results
+                false_negatives += name not in results
     end = time.time()
     dictionary["query_time"] = end - start
-    dictionary["precision"] = true_positives / total_positives if total_positives > 0 else 0
     dictionary["true_positives"] = true_positives
+    dictionary["true_negatives"] = total_negatives - false_negatives
     dictionary["false_positives"] = total_positives - true_positives
     dictionary["false_negatives"] = false_negatives
+    dictionary["false_positive_rate"] = dictionary["false_positives"] / (dictionary["false_positives"] +
+                                                                         dictionary["true_negatives"])
     print("Query Time          ", dictionary["query_time"])
-    print("Precision           ", dictionary["precision"])
     print("True Positives      ", dictionary["true_positives"])
+    print("True Negatives      ", dictionary["true_negatives"])
     print("False Positives     ", dictionary["false_positives"])
     print("False Negatives     ", dictionary["false_negatives"])
+    print("False Positive Rate ", dictionary["false_positive_rate"])
 
 
 # Load SBT and report size
@@ -130,7 +142,7 @@ def print_graph(sbt, print_sbt, print_type):
 
 # Save experiment results into csv
 def save_experiment_results(dictionary, benchmark_name, pandas_location):
-    pd.DataFrame(dictionary).to_csv(pandas_location + benchmark_name + '.csv')
+    pd.DataFrame(dictionary).to_csv(pandas_location + str(benchmark_name).replace('<', '').replace('>', '') + '.csv')
     print()
     print()
 
@@ -154,8 +166,8 @@ def main(p):
                      dictionary=p)
 
     # Query from SBT and report results
-    query_sequences(sbt=sbt, q_sequences={name: sequence[-p["query_size"]:] for name, sequence in sequences.items()},
-                    all_sequences=sequences, method=p["query_method"], num_queries=p["num_queries"], dictionary=p)
+    query_sequences(sbt=sbt, all_sequences=sequences, method=p["query_method"], num_queries=p["num_queries"],
+                    dictionary=p, query_size=p["query_size"])
 
     # Save SBT
     save_sbt(sbt=sbt, file_name=p["sbt_location"] + "sbt_" + p["node_class"],
