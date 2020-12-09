@@ -13,8 +13,8 @@ This module contains an base implementation of a Sequence Bloom Tree (SBT) along
 - Run main.py to simulate the entire benchmarking process (Reading sequencing data -> Inserting sequencing data into SBT -> Querying sequences from the SBT -> Saving the SBT). The amount of time spent in each step and the false positive rate of the queries is also reported along with the uncompressed size of the SBT after saving. Parameters in dictionary p can be adjusted to change the benchmarking process or change the SBT implementation. Note that some of the parameters must be changed in order to specify where the input data is coming from and where the results should be output to.
 - Alternatively, run pipelined_main.py to automate the running of several benchmarking simulations (i.e. running main.py with different params). Set a list of default parameters that would be used across all simulations. The experiments and double_experiments list of dictionaries tell the experiments what parameters to use. The key in each dictionary is the parameter that will be edited and the list of values is the different settings of that parameter for different simulations. The experiments list allows the editing of one parameter at a time while the double_experiments list allows for two parameters to be varied.
  
-**Step 3 - Visualization**
-- Run the jupyter notebook visualization.ipynb to generate visualizations of our benchmarking results.
+**Step 3 - Obtain Experiment Results**
+- Run the script post_process_results.py to combine the outputs of all experiment runs into a single csv. 
  
 
 ## Parameter Descriptions:
@@ -28,7 +28,7 @@ This module contains an base implementation of a Sequence Bloom Tree (SBT) along
 | sequence_len | int | positive | How many bps of each sequence we want to insert into the SBT | 
 | query_size | int | positive | How many bps of each sequence we want to query from the SBT | 
 | num_queries | int | positive | How many queries we want to perform  | 
-| node_class | str | in ["Base", "SSBT", "HowDet"] | Type of SBT to use. "Base" generated a base SBT, "SSBT" generated a Split-SBT, and "HowDet" generated a HowDet-SBT. | 
+| sbt_type | str | in ["Base", "SSBT", "HowDet"] | Type of SBT to use. "Base" generated a base SBT, "SSBT" generated a Split-SBT, and "HowDet" generated a HowDet-SBT. | 
 | insert_method | str | in ["Greedy", "Cluster1", "Cluster2"] | Insertion method to use. "Greedy" inserts nodes 1 by 1 by traversing the tree down the most similar child. "Cluster1" inserts all nodes at the same time by computing the pairwise similarity between the nodes and creating a parent node between the two most similar nodes and repeat until we have 1 node left. "Cluster2" runs similarly to "Cluster1" but all nodes are paired together before the parents are considered for pairing again. | 
 | query_method | str | in ["Normal", "Fast"] | Query method to use. "Normal" hashes the kmers at every filter we query and we check whether or not the index that the kmer hashes to tells us that the kmer is present. "Fast" hashes the kmers only once and instead keeps track of a a list of indices that the kmers hash to. | 
 | similarity_function | function | in [hamming, cosine, jaccard] | Similarity function to use when inserting nodes. Nodes being more similar result in similarity_function returning a more positive. and_hamming is recommended for SSBT and HowDet. cosine is recommended for Base | 
@@ -50,7 +50,7 @@ This module contains an base implementation of a Sequence Bloom Tree (SBT) along
 | SBT/HowDetNode.py | This file contains the HowDetNode class implementation. The node developed based on the HowDet-SBT described in Harris & Medvedev (2019) |  
 | fasta/ref.genome.fa | This file contains the reference genome that we will use to generate mutated genomes by applying SNPs to this genome. |  
 | run.sh | This file contains calls to the simuG perl script (https://github.com/yjx1217/simuG) used to generate random mutated versions of the genome. Run this to generate mutated genomes. |  
-| visualization.ipynb | This file contains code to create visualizations of the benchmarking results used in our paper. The file also compiles the csv outputs of the separate benchmarks into one csv |  
+| post_process_results.py | This file contains code to combine the csv outputs of the separate benchmarks into one csv. |  
 | main.py | This file contains calls to util.py that execute general process of benchmarking. We print the amount of time it takes for each step of the benchmarking. The main file also contains a dictionary p that contains parameters that can be adjusted to change the benchmarking process or change the SBT implementation. |  
 | pipelined_main.py | This file runs main.py multiple times according to some set sequence of experiments. Parameters of the main.py experiment can be varied in the automation of benchmarking. |  
 | utils.py | Implementation of functions that are important for benchmarking (like reading in the files themselves, converting sequences to stuff insertable into the SBT). The file also contains additional optional hash functions and similarity functions that can be set as a parameter to the benchmarking or SBT. |  
