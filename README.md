@@ -40,6 +40,7 @@ This module contains an base implementation of a Sequence Bloom Tree (SBT) along
 | pandas_location | str |  | Where your experiment outputs should be saved as an excel file | 
 | sbt_location | str |  | Where the SBT should be saved | 
 | benchmark_name | str |  | What to name this experiment | 
+| boyer_moore | bool |  | Whether to run Boyer-Moore (Python's default str searching algo) to compare against SBT's query time (Note that running booyer_moore can significantly increase run time) | 
         
 ## File Descriptions:
 | File | Description |
