@@ -5,21 +5,41 @@ Daniel Chu - dchu12@jhu.edu
 Introduction:
 
 This module contains an base implementation of a Sequence Bloom Tree (SBT) along with several different 
-variants of the SBT and variants of insertion and querying algorithms. 
+variants of the SBT and variants of insertion and querying algorithms. There are also tools that help
+generate test data and automate benchmarking tests
 
 
 How to Use:
 
+Step 1 - Generate Data
+
+Run generate_test_data.py to generate completely random genomes. Edit the parameters to determine how many
+sequences are to be created and how large they must be.
+
+Alternatively, run the run.sh script to generate mutated genomes that contain a set number of SNPs from a
+reference genome. Again, feel free to edit the parameters to determine how many SNPs to introduce and how
+many genomes to create. Once done running run.sh, then run rename.py to get the files in the correct format
+
+Step 2 - Run Experiments
+
 Run main.py to simulate the entire benchmarking process (Reading sequencing data -> Inserting sequencing 
-data into SBT -> Querying sequences from the SBT -> Saving the SBT). The amount of time spent in each step, 
-the precision (TP / (TP + FP)) of the queries is also reported along with the uncompressed size of the SBT
-after saving. Paramters in dictionary p can be adjusted to change  the benchmarking process or change the 
-SBT implementation.
+data into SBT -> Querying sequences from the SBT -> Saving the SBT). The amount of time spent in each step
+and the false positive rate of the queries is also reported along with the uncompressed size of the SBT
+after saving. Parameters in dictionary p can be adjusted to change the benchmarking process or change the 
+SBT implementation. Note that some of the parameters must be changed in order to specify where the input data
+is coming from and where the results should be output to.
 
 Run pipelined_main.py to automate the running of several benchmarking simulations (i.e. running main.py with 
-different params)
+different params). Set a list of default parameters that would be used across all simulations. The experiments
+and double_experiments list of dictionaries tell the experiments what parameters to use. The key in each'
+dictionary is the parameter that will be edited and the list of values is the different settings of that parameter
+for different simulations. The experiments list allows the editing of one parameter at a time while the double_
+experiments list allows for two parameters to be varied.
+
+Step 3 - Visualization
     
-    
+Run the jupyter notebook visualization.py to generate visualizations of our benchmarking results.
+ 
 Parameter Descriptions: 
 
     bloom_filter_length: int (Must be positive)
@@ -116,12 +136,28 @@ File Descriptions:
 
     SBT/HowDetNode.py
         This file contains the HowDetNode class implementation. The node developed based on the HowDet-SBT described in
-        Harris & Medvedev (2019)     
+        Harris & Medvedev (2019)  
+        
+    fasta/ref.genome.fa
+        This file contains the reference genome that we will use to generate mutated genomes by applying SNPs to this
+        genome
+        
+    run.sh
+        This file contains calls to the simuG perl script (https://github.com/yjx1217/simuG) used to generate random
+        mutated versions of the genome. Run this to generate mutated genomes.
+
+    visualization.ipynb
+        This file contains code to create visualizations of the benchmarking results used in our paper. The file also
+        compiles the csv outputs of the separate benchmarks into one csv
 
     main.py
         This file contains calls to util.py that execute general process of benchmarking. We print the amount of time 
         it takes for each step of the benchmarking. The main file also contains a dictionary p that contains
         parameters that can be adjusted to change the benchmarking process or change the SBT implementation.        
+        
+    pipelined_main.py
+        This file runs main.py multiple times according to some set sequence of experiments. Parameters of the main.py
+        experiment can be varied in the automation of benchmarking.
 
     utils.py
         Implementation of functions that are important for benchmarking (like reading in the files themselves,
@@ -134,3 +170,7 @@ File Descriptions:
     test.py
         Random non-rigorous end to end tests for SBT
 
+
+Credits:
+    SimuG is a genome simulation software provided by Jia-Xing Yue (2018). We included the code provided in the repo
+    https://github.com/yjx1217/simuG in the fasta folder for generating synthetic genomes for our experimentation.
