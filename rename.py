@@ -6,6 +6,7 @@ for file in os.listdir('fasta'):
         if i % 10 == 0:
             print(i, "files renamed")
         new_name = 'fasta/sim' + str(i)
+        i += 1
         try:
             os.remove(new_name)
         except FileNotFoundError:
