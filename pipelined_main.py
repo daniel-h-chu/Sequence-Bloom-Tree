@@ -6,7 +6,7 @@ import copy
 # will be varied, and a value, which is a list of different values that the parameter will be set to during different
 # calls to main
 experiments = [
-    # {"key": "bloom_filter_length", "values": [500000, 750000, 1000000, 1500000, 2000000]},
+    {"key": "bloom_filter_length", "values": [500000, 750000, 1000000, 1500000, 2000000]},
     {"key": "num_sequences", "values":  [100, 250, 500]},
     {"key": "query_size", "values":  [250, 500, 1000]},
     {"key": "hash_fraction", "values":  [0.5, 0.75, 1]},
@@ -30,19 +30,19 @@ double_experiments = [
 
 # Default Parameters used across all experiments (except the parameters being changed)
 default_parameters = {
-    "bloom_filter_length": 10000,             # m - Size of bloom filters
+    "bloom_filter_length": 1000000,            # m - Size of bloom filters
     "k": 25,                                   # k - Size of kmer
     "bits_to_check": 1000,                     # b' - Number of bits to check when clustering for insertions
     "num_sequences": 250,                      # n - Number of sequences to insert
     "threshold": 0.9,                          # theta - Proportion of kmers that must hit in order to return a node
 
-    "sequence_len": 10000,                  # Size of each sequence inserted
+    "sequence_len": 1000000,                   # Size of each sequence inserted
     "query_size": 500,                         # Size of query sequence
     "num_queries": 500,                        # Number of queries to perform
 
-    "sbt_type": "Base",                      # SBT Type ("Base", "SSBT", "HowDe")
-    "insert_method": "Cluster2",                 # SBT Insertion Method - ("Greedy", "Cluster1", "Cluster2")
-    "query_method": "Fast",                  # SBT Query Method - ("Normal", "Fast")
+    "sbt_type": "Base",                        # SBT Type ("Base", "SSBT", "HowDe")
+    "insert_method": "Cluster2",               # SBT Insertion Method - ("Greedy", "Cluster1", "Cluster2")
+    "query_method": "Fast",                    # SBT Query Method - ("Normal", "Fast")
 
     "similarity_function": hamming,            # Similarity metric to compare filters - (hamming, cosine, jaccard, etc)
     "hash_functions": [hash],                  # h - Function to hash kmers
@@ -51,12 +51,12 @@ default_parameters = {
     "print_sbt": False,                        # Print SBT graph
     "print_type": "Bits",                      # What to print in SBT nodes - ("Bits", "Names")
 
-    "sequence_prefix": "fasta/sim",       # Prefix of genome files (e.g. test_data/sequence1, test_data/sequence2)
+    "sequence_prefix": "fasta/sim",            # Prefix of genome files (e.g. test_data/sequence1, test_data/sequence2)
     "pandas_location": "experiment_results/",  # Whether to save to pandas file
     "sbt_location": "sbt_data/",               # Local to store sbt
-    "benchmark_name": "test_benchmark",         # Name of benchmark
+    "benchmark_name": "test_benchmark",        # Name of benchmark
 
-    "boyer_moore": False,                       # Use Boyer-Moore to benchmark against SBT and to verify hits
+    "boyer_moore": False,                      # Use Boyer-Moore to benchmark against SBT and to verify hits
 }
 
 # Run all experiments

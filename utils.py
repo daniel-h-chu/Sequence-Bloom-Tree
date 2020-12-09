@@ -10,7 +10,6 @@ import pandas as pd
 from SBT.SBT import SBT
 import random
 from collections import defaultdict
-# from memory_profiler import profile
 
 
 # Print parameters being used
