@@ -99,8 +99,10 @@ def query_sequences(sbt, all_sequences, dictionary, num_queries, query_size, met
     dictionary["true_negatives"] = total_negatives - false_negatives
     dictionary["false_positives"] = total_positives - true_positives
     dictionary["false_negatives"] = false_negatives
-    dictionary["false_positive_rate"] = dictionary["false_positives"] / (dictionary["false_positives"] +
-                                                                         dictionary["true_negatives"])
+    dictionary["false_positive_rate"] = 0
+    if dictionary["false_positives"] + dictionary["true_negatives"] > 0:
+        dictionary["false_positive_rate"] = dictionary["false_positives"] / (dictionary["false_positives"] +
+                                                                             dictionary["true_negatives"])
     print("Query Time          ", dictionary["query_time"])
     print("True Positives      ", dictionary["true_positives"])
     print("True Negatives      ", dictionary["true_negatives"])

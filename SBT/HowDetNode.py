@@ -169,9 +169,9 @@ class HowDetNode(object):
 
     """ Print experiment name and the bits of the bloom filter, then call print on children """
     def print(self):
-        print(self.experiment_name, '\t',
-              ''.join(map(str, map(int, self.how_filter))), '\n',
-              ''.join(map(str, map(int, self.det_filter))) if self.det_filter is not None else '', '\n',
+        print(self.experiment_name, '\t', 'how: ',
+              ''.join(map(str, map(int, self.how_filter))), '\n', 'det: ',
+              ''.join(map(str, map(int, self.det_filter))) if self.det_filter is not None else '', '\n', 'uni: ',
               ''.join(map(str, map(int, self.union_filter))) if self.union_filter is not None else '')
         if self.left_child is not None:
             self.left_child.print()
@@ -181,11 +181,11 @@ class HowDetNode(object):
     iterate on children """
     def graphviz(self, graph, bits):
         graph.node(self.id,
-                   ''.join(map(str, map(int, self.how_filter))) + '\n'
-                   + (''.join(map(str, map(int, self.det_filter)))
-                      if self.det_filter is not None else '') + '\n'
-                   + (''.join(map(str, map(int, self.union_filter)))
-                      if self.union_filter is not None else '')
+                   'how: ' + ''.join(map(str, map(int, self.how_filter))) +
+                   ('\ndet: ' + ''.join(map(str, map(int, self.det_filter)))
+                    if self.det_filter is not None else '') +
+                   ('\nuni: ' + ''.join(map(str, map(int, self.union_filter)))
+                    if self.union_filter is not None else '')
                    if bits else self.experiment_name)
         if self.left_child is not None:
             graph.edge(tail_name=self.id, head_name=self.left_child.id)

@@ -148,8 +148,8 @@ class SSBTNode(object):
 
     """ Print experiment name and the bits of the bloom filter, then call print on children """
     def print(self):
-        print(self.experiment_name, '\t',
-              ''.join(map(str, map(int, self.sim_filter))), '\n',
+        print(self.experiment_name, '\t', 'sim: ',
+              ''.join(map(str, map(int, self.sim_filter))), '\n', 'rem: ',
               ''.join(map(str, map(int, self.rem_filter))) if self.rem_filter is not None else '')
         if self.left_child is not None:
             self.left_child.print()
@@ -159,8 +159,8 @@ class SSBTNode(object):
     iterate on children """
     def graphviz(self, graph, bits):
         graph.node(self.id,
-                   ''.join(map(str, map(int, self.sim_filter))) + '\n' + (''.join(map(str, map(int, self.rem_filter)))
-                                                                          if self.rem_filter is not None else '')
+                   'sim: ' + ''.join(map(str, map(int, self.sim_filter))) +
+                   ('\nrem: ' + ''.join(map(str, map(int, self.rem_filter))) if self.rem_filter is not None else '')
                    if bits else self.experiment_name)
         if self.left_child is not None:
             graph.edge(tail_name=self.id, head_name=self.left_child.id)
