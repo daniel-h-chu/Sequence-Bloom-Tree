@@ -2,7 +2,7 @@
 import random
 
 num_files = 500
-str_length = 10000
+str_length = 1000000
 
 for i in range(num_files):
     if i % 10 == 0:
