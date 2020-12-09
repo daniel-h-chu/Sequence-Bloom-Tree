@@ -1,4 +1,5 @@
-testData/sequence*
+test_data/sequence*
 fasta/sim*
 sbt_data
 !fasta/simuG.pl
+test_data/sequence0

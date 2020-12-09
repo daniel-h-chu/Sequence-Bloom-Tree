@@ -2,7 +2,7 @@
 import os
 i = 0
 for file in os.listdir('fasta'):
-    if '.simseq.genome.fa' in file:
+    if 'simseq.genome.fa' in file:
         if i % 10 == 0:
             print(i, "files renamed")
         new_name = 'fasta/sim' + str(i)
