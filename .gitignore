@@ -1,3 +1,4 @@
 testData/sequence*
 fasta/sim*
 sbt_data
+!fasta/simuG.pl
