@@ -6,22 +6,22 @@ different insertion algorithms), querying (and different querying algorithms), a
 from graphviz import Digraph
 from SBT.SSBTNode import SSBTNode
 from SBT.BaseNode import BaseNode
-from SBT.HowDetNode import HowDetNode
+from SBT.HowDeNode import HowDeNode
 import pickle
 import numpy as np
 
 
 class SBT(object):
-    def __init__(self, k, bloom_filter_length, hash_functions, threshold, similarity_function, node_class="Base",
+    def __init__(self, k, bloom_filter_length, hash_functions, threshold, similarity_function, sbt_type="Base",
                  hash_fraction=1):
         self.k = k
         self.bloom_filter_length = bloom_filter_length
         self.hash_functions = hash_functions
         self.threshold = threshold
         self.similarity_function = similarity_function
-        if node_class is not "Base" and node_class is not "SSBT" and node_class is not "HowDet":
-            raise ValueError("Node class should be Base or SSBT or HowDet")
-        self.NodeClass = SSBTNode if node_class is "SSBT" else HowDetNode if node_class is "HowDet" else BaseNode
+        if sbt_type is not "Base" and sbt_type is not "SSBT" and sbt_type is not "HowDe":
+            raise ValueError("Node class should be Base or SSBT or HowDe")
+        self.NodeClass = SSBTNode if sbt_type is "SSBT" else HowDeNode if sbt_type is "HowDe" else BaseNode
         self.hash_fraction = hash_fraction
         self.root = None
 

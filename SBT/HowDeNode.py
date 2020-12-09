@@ -1,7 +1,8 @@
+""" Sequence Bloom Tree Node implementation based off of HowDe-SBT in Harris & Medvedev (2019) """
 from bitarray import bitarray
 
 
-class HowDetNode(object):
+class HowDeNode(object):
     count = 0  # How many Nodes have been created
 
     def __init__(self, bloom_filter_length, hash_functions, similarity_function, experiment_name, how_filter=None):
@@ -16,16 +17,16 @@ class HowDetNode(object):
         self.left_child = None
         self.right_child = None
         # Give node an id
-        self.id = str(HowDetNode.count)
-        HowDetNode.count += 1
+        self.id = str(HowDeNode.count)
+        HowDeNode.count += 1
 
     """ Creates a new parent Node whose children are left_child and right_child. The Node's filter(s) are set so that
     the SBT Topology/Relationship between nodes is maintained """
     @staticmethod
     def from_children(left_child, right_child):
         # Create new node
-        node = HowDetNode(left_child.bloom_filter_length, [left_child.hash_function], left_child.similarity_function,
-                          left_child.experiment_name)
+        node = HowDeNode(left_child.bloom_filter_length, [left_child.hash_function], left_child.similarity_function,
+                         left_child.experiment_name)
         node.experiment_name = "I" + str(node.id)  # Label inner nodes
         # Set new node's filters
         if left_child.union_filter is not None:
@@ -64,8 +65,8 @@ class HowDetNode(object):
 
     """ Deep copy fields of node (except for left and right children) """
     def copy(self):
-        return HowDetNode(self.bloom_filter_length, [self.hash_function], self.similarity_function, self.experiment_name,
-                          self.how_filter.copy())
+        return HowDeNode(self.bloom_filter_length, [self.hash_function], self.similarity_function, self.experiment_name,
+                         self.how_filter.copy())
 
     """ Insert a single node to an existing SBT greedily by traversing down the most similar child starting from the 
         root """

@@ -58,21 +58,25 @@ def insert_sequences(sbt, sequences, bits_to_check, dictionary, method="Greedy")
 # mode in ("Normal", "Fast", "Faster")
 # repeat: number of times to run queries
 # @profile
-def query_sequences(sbt, all_sequences, dictionary, num_queries, query_size, method="Normal"):
+def query_sequences(sbt, all_sequences, dictionary, num_queries, query_size, method="Normal", boyer_moore="False"):
     queries = []
-    for sequence in all_sequences.values():
-        idx = random.randint(0, len(sequence) - query_size)
-        queries += [sequence[idx:idx+query_size]]
-    # Report Boyer-Moore time to get an idea of how fast SBT runs
     hits = defaultdict(list)
-    start = time.time()
-    for query in queries:
-        for name, sequence in all_sequences.items():
-            if query in sequence:
-                hits[query] += [name]
-    end = time.time()
-    dictionary["boyer_moore_time"] = end - start
-    print("Boyer-Moore Time    ", dictionary["boyer_moore_time"])
+    for name, sequence in all_sequences.items():
+        idx = random.randint(0, len(sequence) - query_size)
+        query = sequence[idx:idx+query_size]
+        queries += [query]
+        if not boyer_moore:
+            hits[query] += [name]
+    # Report Boyer-Moore time to get an idea of how fast SBT runs and to verify hits
+    if boyer_moore:
+        start = time.time()
+        for query in queries:
+            for name, sequence in all_sequences.items():
+                if query in sequence:
+                    hits[query] += [name]
+        end = time.time()
+        dictionary["boyer_moore_time"] = end - start
+        print("Boyer-Moore Time    ", dictionary["boyer_moore_time"])
 
     # Begin querying sequences
     start = time.time()
@@ -156,7 +160,7 @@ def main(p):
 
     # Create SBT
     sbt = SBT(k=p["k"], bloom_filter_length=p["bloom_filter_length"], hash_functions=p["hash_functions"],
-              threshold=p["threshold"], similarity_function=p["similarity_function"], node_class=p["node_class"],
+              threshold=p["threshold"], similarity_function=p["similarity_function"], sbt_type=p["sbt_type"],
               hash_fraction=p["hash_fraction"])
 
     # Read Sequences
@@ -169,10 +173,10 @@ def main(p):
 
     # Query from SBT and report results
     query_sequences(sbt=sbt, all_sequences=sequences, method=p["query_method"], num_queries=p["num_queries"],
-                    dictionary=p, query_size=p["query_size"])
+                    dictionary=p, query_size=p["query_size"], boyer_moore=p["boyer_moore"])
 
     # Save SBT
-    save_sbt(sbt=sbt, file_name=p["sbt_location"] + "sbt_" + p["node_class"],
+    save_sbt(sbt=sbt, file_name=p["sbt_location"] + "sbt_" + p["sbt_type"],
              dictionary=p)
 
     # Print Graph Itself

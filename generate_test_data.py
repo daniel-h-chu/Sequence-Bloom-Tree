@@ -1,3 +1,4 @@
+""" Generates completely random strings as test data for the SBT """
 import random
 
 num_files = 500

@@ -1,4 +1,4 @@
-from SBT.SBT import SBT
+""" Some random end to end testing with graphviz """
 from SBT.BaseNode import BaseNode
 from utils import *
 from bitarray import bitarray

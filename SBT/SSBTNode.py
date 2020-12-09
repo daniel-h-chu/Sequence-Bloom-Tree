@@ -1,3 +1,4 @@
+""" Sequence Bloom Tree Node implementation based off of HowDe-SBT in Kingsford & Solomon (2018) """
 from bitarray import bitarray
 
 

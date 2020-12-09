@@ -1,6 +1,4 @@
-"""
-Pipelined main that runs main multiple times but with different parameters
-"""
+""" Pipelined version of main.py that runs main multiple times but with different parameters """
 from utils import *
 import copy
 
@@ -8,7 +6,7 @@ import copy
 # will be varied, and a value, which is a list of different values that the parameter will be set to during different
 # calls to main
 experiments = [
-    {"key": "bloom_filter_length", "values": [500000, 750000, 1000000, 1500000, 2000000]},
+    # {"key": "bloom_filter_length", "values": [500000, 750000, 1000000, 1500000, 2000000]},
     {"key": "num_sequences", "values":  [100, 250, 500]},
     {"key": "query_size", "values":  [250, 500, 1000]},
     {"key": "hash_fraction", "values":  [0.5, 0.75, 1]},
@@ -19,14 +17,14 @@ experiments = [
 # simultaneously and two values (values0, values1) that contain a list of values that the first and second parameter,
 # respectively, will be set to during different calls to main.
 double_experiments = [
-    {"keys": ("node_class", "insert_method"),
-     "values0": ["Base", "SSBT", "HowDet"],
+    {"keys": ("sbt_type", "insert_method"),
+     "values0": ["Base", "SSBT", "HowDe"],
      "values1": ["Greedy", "Cluster1", "Cluster2"]},
-    {"keys": ("node_class", "query_method"),
-     "values0": ["Base", "SSBT", "HowDet"],
+    {"keys": ("sbt_type", "query_method"),
+     "values0": ["Base", "SSBT", "HowDe"],
      "values1": ["Normal", "Fast"]},
-    {"keys": ("node_class", "similarity_function"),
-     "values0": ["Base", "SSBT", "HowDet"],
+    {"keys": ("sbt_type", "similarity_function"),
+     "values0": ["Base", "SSBT", "HowDe"],
      "values1": [hamming, cosine, jaccard]},
 ]
 
@@ -42,7 +40,7 @@ default_parameters = {
     "query_size": 500,                         # Size of query sequence
     "num_queries": 500,                        # Number of queries to perform
 
-    "node_class": "Base",                      # SBT Type ("Base", "SSBT", "HowDet")
+    "sbt_type": "Base",                      # SBT Type ("Base", "SSBT", "HowDe")
     "insert_method": "Cluster2",                 # SBT Insertion Method - ("Greedy", "Cluster1", "Cluster2")
     "query_method": "Fast",                  # SBT Query Method - ("Normal", "Fast")
 
@@ -56,7 +54,9 @@ default_parameters = {
     "sequence_prefix": "fasta/sim",       # Prefix of genome files (e.g. test_data/sequence1, test_data/sequence2)
     "pandas_location": "experiment_results/",  # Whether to save to pandas file
     "sbt_location": "sbt_data/",               # Local to store sbt
-    "benchmark_name": "test_benchmark"         # Name of benchmark
+    "benchmark_name": "test_benchmark",         # Name of benchmark
+
+    "boyer_moore": False,                       # Use Boyer-Moore to benchmark against SBT and to verify hits
 }
 
 # Run all experiments
