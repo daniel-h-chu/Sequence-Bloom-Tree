@@ -1,5 +1,6 @@
 # README
 Author: Daniel Chu - dchu12@jhu.edu
+
 GitHub Link - https://github.com/dchu18/GenomicsProject
 ## Introduction:
 This module contains an base implementation of a Sequence Bloom Tree (SBT) along with several different variants of the SBT and variants of insertion and querying algorithms. There are also tools that help generate test data and automate benchmarking tests
@@ -13,7 +14,7 @@ This module contains an base implementation of a Sequence Bloom Tree (SBT) along
 - Alternatively, run pipelined_main.py to automate the running of several benchmarking simulations (i.e. running main.py with different params). Set a list of default parameters that would be used across all simulations. The experiments and double_experiments list of dictionaries tell the experiments what parameters to use. The key in each dictionary is the parameter that will be edited and the list of values is the different settings of that parameter for different simulations. The experiments list allows the editing of one parameter at a time while the double_experiments list allows for two parameters to be varied.
  
 **Step 3 - Visualization**
-- Run the jupyter notebook visualization.py to generate visualizations of our benchmarking results.
+- Run the jupyter notebook visualization.ipynb to generate visualizations of our benchmarking results.
  
 
 ## Parameter Descriptions:
